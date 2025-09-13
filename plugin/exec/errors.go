@@ -22,6 +22,10 @@ var (
 	ErrExecInvalid = fmt.Errorf(
 		"%w: invalid exec field", api.ErrParse,
 	)
+	// ErrUnknownShell returns an ErrParse when an unknown shell is specified
+	ErrUnknownShell = fmt.Errorf(
+		"%w: unknown shell", api.ErrParse,
+	)
 )
 
 // ExecEmpty returns an ErrExecEmpty with the line/column of the supplied YAML
@@ -45,4 +49,12 @@ func ExecInvalidShellParse(err error, node *yaml.Node) error {
 // ExecRuntimeError returns a RuntimeError with an error from the Exec() call.
 func ExecRuntimeError(err error) error {
 	return fmt.Errorf("%w: %s", api.RuntimeError, err)
+}
+
+// ExecUnknownShell returns a wrapped version of ErrParse that indicates the
+// user specified an unknown shell.
+func ExecUnknownShell(shell string) error {
+	return fmt.Errorf(
+		"%w: %s", ErrUnknownShell, shell,
+	)
 }

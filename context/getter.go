@@ -73,15 +73,20 @@ func Fixtures(ctx context.Context) map[string]api.Fixture {
 	return map[string]api.Fixture{}
 }
 
-// PriorRun gets a context's prior run data
-func PriorRun(ctx context.Context) map[string]interface{} {
+// Run gets a context's run data
+func Run(ctx context.Context) map[string]any {
 	if ctx == nil {
-		return map[string]interface{}{}
+		return map[string]any{}
 	}
-	if v := ctx.Value(priorRunKey); v != nil {
-		return v.(map[string]interface{})
+	if v := ctx.Value(runKey); v != nil {
+		return v.(map[string]any)
 	}
-	return map[string]interface{}{}
+	return map[string]any{}
+}
+
+// deprecated: use Run()
+func PriorRun(ctx context.Context) map[string]any {
+	return Run(ctx)
 }
 
 // ReplaceVariables replaces all occurrences of any of the variables in the

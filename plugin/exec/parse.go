@@ -5,7 +5,6 @@
 package exec
 
 import (
-	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -16,21 +15,6 @@ import (
 
 	"github.com/gdt-dev/core/api"
 )
-
-var (
-	// ErrUnknownShell returns an ErrParse when an unknown shell is specified
-	ErrUnknownShell = fmt.Errorf(
-		"%w: unknown shell", api.ErrParse,
-	)
-)
-
-// UnknownShell returns a wrapped version of ErrParse that indicates the
-// user specified an unknown shell.
-func UnknownShell(shell string) error {
-	return fmt.Errorf(
-		"%w: %s", ErrUnknownShell, shell,
-	)
-}
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
@@ -87,7 +71,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 			s.Shell = strings.TrimSpace(valNode.Value)
 			if _, err := exec.LookPath(s.Shell); err != nil {
-				return UnknownShell(s.Shell)
+				return ExecUnknownShell(s.Shell)
 			}
 		case "exec":
 			if valNode.Kind != yaml.ScalarNode {
