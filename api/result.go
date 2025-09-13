@@ -23,7 +23,7 @@ type Result struct {
 	// can place anything they want in here and grab it from the context with
 	// the `gdtcontext.PriorRunData()` function. Plugins are responsible for
 	// clearing and setting any used prior run data.
-	data map[string]interface{}
+	data map[string]any
 }
 
 // HasData returns true if any of the run data has been set, false otherwise.
@@ -32,7 +32,7 @@ func (r *Result) HasData() bool {
 }
 
 // Data returns the raw run data saved in the result
-func (r *Result) Data() map[string]interface{} {
+func (r *Result) Data() map[string]any {
 	return r.data
 }
 
@@ -50,10 +50,10 @@ func (r *Result) Failures() []error {
 // SetData sets a value in the result's run data cache.
 func (r *Result) SetData(
 	key string,
-	val interface{},
+	val any,
 ) {
 	if r.data == nil {
-		r.data = map[string]interface{}{}
+		r.data = map[string]any{}
 	}
 	r.data[key] = val
 }
@@ -66,7 +66,7 @@ func (r *Result) SetFailures(failures ...error) {
 type ResultModifier func(*Result)
 
 // WithData modifies the Result with the supplied run data key and value
-func WithData(key string, val interface{}) ResultModifier {
+func WithData(key string, val any) ResultModifier {
 	return func(r *Result) {
 		r.SetData(key, val)
 	}
