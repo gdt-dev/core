@@ -1,4 +1,4 @@
-# `gdt-dev/core` - Core `gdt` library and specification
+# Core `gdt` library and specification
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gdt-dev/core.svg)](https://pkg.go.dev/github.com/gdt-dev/core)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gdt-dev/core)](https://goreportcard.com/report/github.com/gdt-dev/core)
