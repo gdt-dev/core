@@ -8,63 +8,7 @@ import (
 	"fmt"
 
 	"github.com/gdt-dev/core/api"
-	"gopkg.in/yaml.v3"
 )
-
-// UnsupportedJSONSchemaReference returns ErrUnsupportedJSONSchemaReference for
-// a supplied URL.
-func UnsupportedJSONSchemaReference(url string, node *yaml.Node) error {
-	return &api.ParseError{
-		Line:    node.Line,
-		Column:  node.Column,
-		Message: fmt.Sprintf("unsupported JSONSchema reference: %s", url),
-	}
-}
-
-// JSONSchemaFileNotFound returns ErrJSONSchemaFileNotFound for a supplied
-// path.
-func JSONSchemaFileNotFound(path string, node *yaml.Node) error {
-	return &api.ParseError{
-		Line:    node.Line,
-		Column:  node.Column,
-		Message: fmt.Sprintf("unable to find JSONSchema file %q", path),
-	}
-}
-
-// JSONUnmarshalError returns an ErrFailure when JSON content cannot be
-// decoded.
-func JSONUnmarshalError(err error, node *yaml.Node) error {
-	if node != nil {
-		return &api.ParseError{
-			Line:    node.Line,
-			Column:  node.Column,
-			Message: fmt.Sprintf("failed to unmarshal JSON: %s", err),
-		}
-	}
-	return &api.ParseError{
-		Message: fmt.Sprintf("failed to unmarshal JSON: %s", err),
-	}
-}
-
-// JSONPathInvalid returns an ParseError when a JSONPath expression could not be
-// parsed.
-func JSONPathInvalid(path string, err error, node *yaml.Node) error {
-	return &api.ParseError{
-		Line:    node.Line,
-		Column:  node.Column,
-		Message: fmt.Sprintf("JSONPath invalid: %s: %s", path, err),
-	}
-}
-
-// JSONPathInvalidNoRoot returns an ErrJSONPathInvalidNoRoot when a JSONPath
-// expression does not start with '$'.
-func JSONPathInvalidNoRoot(path string, node *yaml.Node) error {
-	return &api.ParseError{
-		Line:    node.Line,
-		Column:  node.Column,
-		Message: fmt.Sprintf("JSONPath expression %s invalid: expression must start with '$'", path),
-	}
-}
 
 var (
 	// ErrJSONPathNotFound returns an ErrFailure when a JSONPath expression

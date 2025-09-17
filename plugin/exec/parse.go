@@ -5,6 +5,7 @@
 package exec
 
 import (
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -14,11 +15,42 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 )
+
+// ExecEmpty returns an ErrExecEmpty with the line/column of the supplied YAML
+// node.
+func ExecEmpty(node *yaml.Node) error {
+	return &parse.Error{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected non-empty exec field",
+	}
+}
+
+// ExecInvalidShellParse returns an ErrExecInvalid with the error from
+// shlex.Split
+func ExecInvalidShellParse(err error, node *yaml.Node) error {
+	return &parse.Error{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("cannot parse shell args: %s", err),
+	}
+}
+
+// ExecUnknownShell returns a wrapped version of ParseError that indicates the
+// user specified an unknown shell.
+func ExecUnknownShell(shell string, node *yaml.Node) error {
+	return &parse.Error{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("unknown shell %q", shell),
+	}
+}
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	vars := Variables{}
 	var execValNode *yaml.Node
@@ -27,14 +59,14 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "var-stdout", "var.stdout", "var_stdout":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			varName := strings.TrimSpace(valNode.Value)
 			vars[varName] = VarEntry{
@@ -42,7 +74,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "var-stderr", "var.stderr", "var_stderr":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			varName := strings.TrimSpace(valNode.Value)
 			vars[varName] = VarEntry{
@@ -50,7 +82,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "var-rc", "var.rc", "var_rc", "var-returncode", "var.returncode", "var_returncode":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			varName := strings.TrimSpace(valNode.Value)
 			vars[varName] = VarEntry{
@@ -58,7 +90,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "var":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var specVars Variables
 			if err := valNode.Decode(&specVars); err != nil {
@@ -67,7 +99,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			vars = lo.Assign(specVars, vars)
 		case "shell":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Shell = strings.TrimSpace(valNode.Value)
 			if _, err := exec.LookPath(s.Shell); err != nil {
@@ -75,7 +107,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "exec":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			execValNode = valNode
 			s.Exec = strings.TrimSpace(valNode.Value)
@@ -84,7 +116,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "assert":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var e *Expect
 			if err := valNode.Decode(&e); err != nil {
@@ -93,7 +125,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			s.Assert = e
 		case "on":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var o *On
 			if err := valNode.Decode(&o); err != nil {
@@ -104,7 +136,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if lo.Contains(api.BaseSpecFields, key) {
 				continue
 			}
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	if len(vars) > 0 {
@@ -124,21 +156,21 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 
 func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "exit_code", "exit-code":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			ec, err := strconv.Atoi(valNode.Value)
 			if err != nil {
@@ -147,7 +179,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.ExitCode = ec
 		case "out":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var pe *PipeExpect
 			if err := valNode.Decode(&pe); err != nil {
@@ -156,7 +188,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.Out = pe
 		case "err":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var pe *PipeExpect
 			if err := valNode.Decode(&pe); err != nil {
@@ -164,7 +196,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			}
 			e.Err = pe
 		default:
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil
@@ -172,21 +204,21 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 
 func (e *PipeExpect) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "all", "is", "contains", "contains-all", "contains_all":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedScalarOrSequenceAt(valNode)
+				return parse.ExpectedScalarOrSequenceAt(valNode)
 			}
 			var v api.FlexStrings
 			if err := valNode.Decode(&v); err != nil {
@@ -195,7 +227,7 @@ func (e *PipeExpect) UnmarshalYAML(node *yaml.Node) error {
 			e.ContainsAll = &v
 		case "any", "contains-one-of", "contains-any", "contains_one_of", "contains_any":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedScalarOrSequenceAt(valNode)
+				return parse.ExpectedScalarOrSequenceAt(valNode)
 			}
 			var v api.FlexStrings
 			if err := valNode.Decode(&v); err != nil {
@@ -204,7 +236,7 @@ func (e *PipeExpect) UnmarshalYAML(node *yaml.Node) error {
 			e.ContainsAny = &v
 		case "none", "none-of", "contains-none-of", "contains-none", "none_of", "contains_none_of", "contains_none":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedScalarOrSequenceAt(valNode)
+				return parse.ExpectedScalarOrSequenceAt(valNode)
 			}
 			var v api.FlexStrings
 			if err := valNode.Decode(&v); err != nil {
@@ -212,7 +244,7 @@ func (e *PipeExpect) UnmarshalYAML(node *yaml.Node) error {
 			}
 			e.ContainsNone = &v
 		default:
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil

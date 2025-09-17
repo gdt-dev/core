@@ -8,23 +8,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/PaesslerAG/jsonpath"
 	gjs "github.com/xeipuuv/gojsonschema"
-	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/api"
-)
-
-var (
-	// defining the JSONPath language here allows us to disaggregate parse
-	// errors from runtime errors when evaluating a JSONPath expression.
-	lang = jsonpath.Language()
 )
 
 // Expect represents one or more assertions about JSON data responses
@@ -40,98 +30,6 @@ type Expect struct {
 	// Schema is a file path to the JSONSchema that the JSON should validate
 	// against.
 	Schema string `yaml:"schema,omitempty"`
-}
-
-// UnmarshalYAML is a custom unmarshaler that ensures that JSONPath expressions
-// contained in the Expect are valid.
-func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
-	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
-	}
-	// maps/structs are stored in a top-level Node.Content field which is a
-	// concatenated slice of Node pointers in pairs of key/values.
-	for i := 0; i < len(node.Content); i += 2 {
-		keyNode := node.Content[i]
-		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
-		}
-		key := keyNode.Value
-		valNode := node.Content[i+1]
-		switch key {
-		case "len":
-			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
-			}
-			var v *int
-			if err := valNode.Decode(&v); err != nil {
-				return err
-			}
-			e.Len = v
-		case "schema":
-			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
-			}
-			// Ensure any JSONSchema URL specified in exponse.json.schema exists
-			schemaURL := valNode.Value
-			if strings.HasPrefix(schemaURL, "http://") || strings.HasPrefix(schemaURL, "https://") {
-				// TODO(jaypipes): Support network lookups?
-				return UnsupportedJSONSchemaReference(schemaURL, valNode)
-			}
-			// Convert relative filepaths to absolute filepaths rooted in the context's
-			// testdir after stripping any "file://" scheme prefix
-			schemaURL = strings.TrimPrefix(schemaURL, "file://")
-			schemaURL, _ = filepath.Abs(schemaURL)
-
-			f, err := os.Open(schemaURL)
-			if err != nil {
-				return JSONSchemaFileNotFound(schemaURL, valNode)
-			}
-			defer f.Close()
-			if runtime.GOOS == "windows" {
-				// Need to do this because of an "optimization" done in the
-				// gojsonreference library:
-				// https://github.com/xeipuuv/gojsonreference/blob/bd5ef7bd5415a7ac448318e64f11a24cd21e594b/reference.go#L107-L114
-				e.Schema = "file:///" + schemaURL
-			} else {
-				e.Schema = "file://" + schemaURL
-			}
-		case "paths":
-			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
-			}
-			paths := map[string]string{}
-			if err := valNode.Decode(&paths); err != nil {
-				return err
-			}
-			for path := range paths {
-				if len(path) == 0 || path[0] != '$' {
-					return JSONPathInvalidNoRoot(path, valNode)
-				}
-				if _, err := lang.NewEvaluable(path); err != nil {
-					return JSONPathInvalid(path, err, valNode)
-				}
-			}
-			e.Paths = paths
-		case "path_formats", "path-formats":
-			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
-			}
-			pathFormats := map[string]string{}
-			if err := valNode.Decode(&pathFormats); err != nil {
-				return err
-			}
-			for pathFormat := range pathFormats {
-				if len(pathFormat) == 0 || pathFormat[0] != '$' {
-					return JSONPathInvalidNoRoot(pathFormat, valNode)
-				}
-				if _, err := lang.NewEvaluable(pathFormat); err != nil {
-					return JSONPathInvalid(pathFormat, err, valNode)
-				}
-			}
-			e.PathFormats = pathFormats
-		}
-	}
-	return nil
 }
 
 // New returns a `api.Assertions` that asserts various conditions about

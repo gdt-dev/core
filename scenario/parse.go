@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/plugin"
 )
 
@@ -17,7 +18,7 @@ import (
 // types and attempts to unmarshal test spec contents into those types.
 func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	s.Timings = &api.Timings{}
 	plugins := plugin.Registered()
@@ -32,33 +33,33 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "name":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Name = valNode.Value
 		case "description":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Description = valNode.Value
 		case "fixtures":
 			if valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedSequenceAt(valNode)
+				return parse.ExpectedSequenceAt(valNode)
 			}
 			var fixtures []string
 			if err := valNode.Decode(&fixtures); err != nil {
-				return api.ExpectedSequenceAt(valNode)
+				return parse.ExpectedSequenceAt(valNode)
 			}
 			s.Fixtures = fixtures
 		case "defaults":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			// Each plugin can have its own set of default configuration values
 			// under an outer map field keyed to the name of the plugin.
@@ -93,14 +94,14 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "tests":
 			if valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedSequenceAt(valNode)
+				return parse.ExpectedSequenceAt(valNode)
 			}
 			for idx, testNode := range valNode.Content {
 				parsed := false
@@ -117,7 +118,7 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 				for plugin, specs := range pluginSpecs {
 					for idx, sp := range specs {
 						if err := testNode.Decode(sp); err != nil {
-							if errors.Is(err, api.ErrUnknownField) {
+							if errors.Is(err, parse.ErrParseUnknownField) {
 								continue
 							}
 							return err
@@ -149,12 +150,12 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 					}
 				}
 				if !parsed {
-					return api.UnknownSpecAt(s.Path, valNode)
+					return parse.UnknownSpecAt(s.Path, valNode)
 				}
 			}
 		case "skip-if":
 			if valNode.Kind != yaml.SequenceNode {
-				return api.ExpectedSequenceAt(valNode)
+				return parse.ExpectedSequenceAt(valNode)
 			}
 			for idx, testNode := range valNode.Content {
 				parsed := false
@@ -170,7 +171,7 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 				}
 				for _, sp := range specs {
 					if err := testNode.Decode(sp); err != nil {
-						if errors.Is(err, api.ErrUnknownField) {
+						if errors.Is(err, parse.ErrParseUnknownField) {
 							continue
 						}
 						return err
@@ -181,7 +182,7 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 					break
 				}
 				if !parsed {
-					return api.UnknownSpecAt(s.Path, valNode)
+					return parse.UnknownSpecAt(s.Path, valNode)
 				}
 			}
 		}
