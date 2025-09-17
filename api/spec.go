@@ -160,7 +160,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if r.Attempts != nil {
 				attempts := *r.Attempts
 				if attempts < 1 {
-					return parse.InvalidRetryAttempts(valNode, attempts)
+					return parse.InvalidRetryAttemptsAt(valNode, attempts)
 				}
 			}
 			if r.Interval != "" {
