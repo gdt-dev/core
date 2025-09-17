@@ -30,7 +30,7 @@ func TestFlexStringsError(t *testing.T) {
 	err := yaml.Unmarshal(contents, &f)
 
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrExpectedScalarOrSequence)
+	assert.ErrorIs(err, api.ErrParse)
 }
 
 func TestFlexStrings(t *testing.T) {

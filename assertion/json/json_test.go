@@ -27,7 +27,7 @@ schema: http://example.com/schema
 `)
 	err := yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, gdtjson.ErrUnsupportedJSONSchemaReference)
+	require.ErrorIs(err, api.ErrParse)
 }
 
 func TestJSONSchemaFileNotFound(t *testing.T) {
@@ -40,7 +40,7 @@ schema: file:///path/does/not/exist
 `)
 	err := yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, gdtjson.ErrJSONSchemaFileNotFound)
+	require.ErrorIs(err, api.ErrParse)
 }
 
 func TestJSONPathInvalid(t *testing.T) {
@@ -61,7 +61,7 @@ paths: notamap
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrExpectedMap)
+	require.ErrorIs(err, api.ErrParse)
 
 	content = []byte(`
 len: 1
@@ -70,7 +70,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, gdtjson.ErrJSONPathInvalidNoRoot)
+	require.ErrorIs(err, api.ErrParse)
 
 	content = []byte(`
 len: 1
@@ -79,7 +79,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, gdtjson.ErrJSONPathInvalid)
+	require.ErrorIs(err, api.ErrParse)
 
 	content = []byte(`
 len: 1
@@ -88,7 +88,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, gdtjson.ErrJSONPathInvalid)
+	require.ErrorIs(err, api.ErrParse)
 }
 
 func content() []byte {
@@ -135,7 +135,7 @@ func TestJSONUnmarshalError(t *testing.T) {
 	require.False(a.OK(ctx))
 	failures := a.Failures()
 	require.Len(failures, 1)
-	require.ErrorIs(failures[0], gdtjson.ErrJSONUnmarshalError)
+	require.ErrorIs(failures[0], api.ErrParse)
 }
 
 func TestJSONPathError(t *testing.T) {

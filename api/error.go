@@ -5,14 +5,22 @@
 package api
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 var (
+	// ErrParse indicates a YAML definition is not valid
+	ErrParse = errors.New("parse error")
+	// ErrUnknownField indicates that there was an unknown field in the parsing
+	// of a spec or scenario.
+	ErrUnknownField = errors.New("unknown field")
 	// ErrFailure is the base error class for all errors that represent failed
 	// assertions when evaluating a test.
 	ErrFailure = errors.New("assertion failed")
@@ -96,80 +104,91 @@ func UnexpectedError(err error) error {
 	return fmt.Errorf("%w: %s", ErrUnexpectedError, err)
 }
 
+// ParseError is a custom error type that stores the location of an error that
+// occurred while parsing a gdt test specification.
+type ParseError struct {
+	// Path is the filepath to the parsed document.
+	Path string
+	// Line is the line number where the parse error occurred.
+	Line int
+	// Column is the column number where the parse error occurred.
+	Column int
+	// Message is the error message.
+	Message string
+	// Contents is the contents of the file read at Path.
+	Contents string
+}
+
+// Error implements the error interface for ParseError.
+func (e *ParseError) Error() string {
+	contents := ""
+	if e.Contents != "" {
+		contents = fmt.Sprintf("\n%s\n", e.Contents)
+	}
+	return fmt.Sprintf(
+		"error parsing %q: at line %d, column %d:\n%s\n%s",
+		e.Path, e.Line, e.Column, e.Message, contents,
+	)
+}
+
+// SetContents adds the detail to the error message for surrounding contents if
+// the Path, Line and Column is set.
+func (e *ParseError) SetContents() {
+	if e.Path != "" {
+		f, err := os.Open(e.Path)
+		if err != nil {
+			// just ignore...
+			return
+		}
+		defer f.Close()
+
+		b := &strings.Builder{}
+		viewStartLine := max(0, e.Line-2)
+		viewEndLine := e.Line + 2
+
+		sc := bufio.NewScanner(f)
+		x := 0
+		for sc.Scan() {
+			x++
+			line := sc.Text()
+			if x > viewEndLine {
+				break
+			}
+			if x < viewStartLine {
+				continue
+			}
+			_, _ = fmt.Fprintf(b, "%03d: %s\n", x, line)
+			if x == e.Line {
+				_, _ = fmt.Fprintf(b, "  %s^", strings.Repeat(" ", e.Column))
+			}
+		}
+		if err := sc.Err(); err != nil {
+			// just ignore...
+			return
+		}
+		e.Contents = b.String()
+	}
+}
+
+func (e *ParseError) Unwrap() error {
+	return ErrParse
+}
+
 var (
 	// ErrUnknownSourceType indicates that a From() function was called with an
 	// unknown source parameter type.
 	ErrUnknownSourceType = errors.New("unknown source argument type")
-	// ErrUnknownSpec indicates that there was a test spec definition in a YAML
-	// file that no plugin could parse.
-	ErrUnknownSpec = errors.New("no plugin could parse spec definition")
-	// ErrUnknownField indicates that there was an unknown field in the parsing
-	// of a spec or scenario.
-	ErrUnknownField = errors.New("unknown field")
-	// ErrParse indicates a YAML definition is not valid
-	ErrParse = errors.New("invalid YAML")
-	// ErrExpectedMap indicates that we did not find an expected mapping
-	// field
-	ErrExpectedMap = fmt.Errorf(
-		"%w: expected map field", ErrParse,
-	)
-	// ErrExpectedScalar indicates that we did not find an expected scalar
-	// field
-	ErrExpectedScalar = fmt.Errorf(
-		"%w: expected scalar field", ErrParse,
-	)
-	// ErrExpectedSequence indicates that we did not find an expected
-	// scalar field
-	ErrExpectedSequence = fmt.Errorf(
-		"%w: expected sequence field", ErrParse,
-	)
-	// ErrExpectedInt indicates that we did not find an expected integer
-	// value
-	ErrExpectedInt = fmt.Errorf(
-		"%w: expected int value", ErrParse,
-	)
-	// ErrExpectedScalarOrMap indicates that we did not find an expected
-	// scalar or map field
-	ErrExpectedScalarOrMap = fmt.Errorf(
-		"%w: expected scalar or map field", ErrParse,
-	)
-	// ErrExpectedScalarOrSequence indicates that we did not find an expected
-	// scalar or sequence of scalars field
-	ErrExpectedScalarOrSequence = fmt.Errorf(
-		"%w: expected scalar or sequence of scalars field", ErrParse,
-	)
-	// ErrExpectedTimeout indicates that the timeout specification was not
-	// valid.
-	ErrExpectedTimeout = fmt.Errorf(
-		"%w: expected timeout specification", ErrParse,
-	)
-	// ErrExpectedWait indicates that the wait specification was not valid.
-	ErrExpectedWait = fmt.Errorf(
-		"%w: expected wait specification", ErrParse,
-	)
-	// ErrExpectedRetry indicates that the retry specification was not valid.
-	ErrExpectedRetry = fmt.Errorf(
-		"%w: expected retry specification", ErrParse,
-	)
-	// ErrInvalidRetryAttempts indicates that the retry attempts was not
-	// positive.
-	ErrInvalidRetryAttempts = fmt.Errorf(
-		"%w: invalid retry attempts", ErrParse,
-	)
-	// ErrFileNotFound is returned when a file path does not exist for a
-	// create/apply/delete target.
-	ErrFileNotFound = fmt.Errorf(
-		"%w: file not found", ErrParse,
-	)
 )
 
 // UnknownSpecAt returns an ErrUnknownSpec with the line/column of the supplied
 // YAML node.
 func UnknownSpecAt(path string, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w in %s at line %d, column %d",
-		ErrUnknownSpec, path, node.Line, node.Column,
-	)
+	return &ParseError{
+		Path:    path,
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "no plugin could parse spec definition",
+	}
 }
 
 // UnknownFieldAt returns an ErrUnknownField for a supplied field annotated
@@ -184,91 +203,101 @@ func UnknownFieldAt(field string, node *yaml.Node) error {
 // ExpectedMapAt returns an ErrExpectedMap error annotated with the
 // line/column of the supplied YAML node.
 func ExpectedMapAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedMap, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected map field",
+	}
 }
 
 // ExpectedScalarAt returns an ErrExpectedScalar error annotated with
 // the line/column of the supplied YAML node.
 func ExpectedScalarAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedScalar, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected scalar field",
+	}
 }
 
 // ExpectedSequenceAt returns an ErrExpectedSequence error annotated
 // with the line/column of the supplied YAML node.
 func ExpectedSequenceAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedSequence, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected sequence field",
+	}
 }
 
 // ExpectedIntAt returns an ErrExpectedInt error annotated
 // with the line/column of the supplied YAML node.
 func ExpectedIntAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedInt, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected int value",
+	}
 }
 
 // ExpectedScalarOrSequenceAt returns an ErrExpectedScalarOrSequence error
 // annotated with the line/column of the supplied YAML node.
 func ExpectedScalarOrSequenceAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedScalarOrSequence, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected scalar or sequence of scalars field",
+	}
 }
 
 // ExpectedScalarOrMapAt returns an ErrExpectedScalarOrMap error annotated with
 // the line/column of the supplied YAML node.
 func ExpectedScalarOrMapAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedScalarOrMap, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected scalar or map field",
+	}
 }
 
 // ExpectedTimeoutAt returns an ErrExpectedTimeout error annotated
 // with the line/column of the supplied YAML node.
 func ExpectedTimeoutAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedTimeout, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected timeout specification",
+	}
 }
 
 // ExpectedWaitAt returns an ErrExpectedWait error annotated with the
 // line/column of the supplied YAML node.
 func ExpectedWaitAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedWait, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected wait specification",
+	}
 }
 
 // ExpectedRetryAt returns an ErrExpectedRetry error annotated with the
 // line/column of the supplied YAML node.
 func ExpectedRetryAt(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExpectedRetry, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected retry specification",
+	}
 }
 
 // InvalidRetryAttempts returns an ErrInvalidRetryAttempts error annotated with
 // the line/column of the supplied YAML node.
 func InvalidRetryAttempts(node *yaml.Node, attempts int) error {
-	return fmt.Errorf(
-		"%w of %d at line %d, column %d",
-		ErrInvalidRetryAttempts, attempts, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("invalid retry attempts: %d", attempts),
+	}
 }
 
 // UnknownSourceType returns an ErrUnknownSourceType error describing the
@@ -279,10 +308,11 @@ func UnknownSourceType(source interface{}) error {
 
 // FileNotFound returns ErrFileNotFound for a given file path
 func FileNotFound(path string, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: %s at line %d, column %d",
-		ErrFileNotFound, path, node.Line, node.Column,
-	)
+	return &ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("file not found: %q", path),
+	}
 }
 
 var (

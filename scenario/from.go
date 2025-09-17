@@ -9,6 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/gdt-dev/core/api"
 	"github.com/gdt-dev/core/parse"
 )
 
@@ -34,6 +35,11 @@ func FromBytes(
 	s := New(mods...)
 	expanded := parse.ExpandWithFixedDoubleDollar(string(contents))
 	if err := yaml.Unmarshal([]byte(expanded), s); err != nil {
+		if ep, ok := err.(*api.ParseError); ok {
+			ep.Path = s.Path
+			ep.SetContents()
+			return nil, ep
+		}
 		return nil, err
 	}
 
