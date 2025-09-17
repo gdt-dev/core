@@ -120,7 +120,7 @@ func ExpectedMapAt(node *yaml.Node) error {
 // ErrExpectedMapOrYAMLString returns a parse error for when a field that can
 // contain a map[string]interface{} or an embedded YAML string did not contain
 // either of those things.
-func ErrExpectedMapOrYAMLString(node *yaml.Node) error {
+func ExpectedMapOrYAMLStringAt(node *yaml.Node) error {
 	return &Error{
 		Line:    node.Line,
 		Column:  node.Column,
@@ -209,9 +209,9 @@ func ExpectedRetryAt(node *yaml.Node) error {
 	}
 }
 
-// InvalidRetryAttempts returns an ErrInvalidRetryAttempts error annotated with
+// InvalidRetryAttemptsAt returns an ErrInvalidRetryAttempts error annotated with
 // the line/column of the supplied YAML node.
-func InvalidRetryAttempts(node *yaml.Node, attempts int) error {
+func InvalidRetryAttemptsAt(node *yaml.Node, attempts int) error {
 	return &Error{
 		Line:    node.Line,
 		Column:  node.Column,
@@ -219,8 +219,8 @@ func InvalidRetryAttempts(node *yaml.Node, attempts int) error {
 	}
 }
 
-// FileNotFound returns ErrFileNotFound for a given file path
-func FileNotFound(path string, node *yaml.Node) error {
+// FileNotFoundAt returns ErrFileNotFound for a given file path
+func FileNotFoundAt(path string, node *yaml.Node) error {
 	return &Error{
 		Line:    node.Line,
 		Column:  node.Column,
