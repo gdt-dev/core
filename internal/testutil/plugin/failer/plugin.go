@@ -11,6 +11,7 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	gdtapi "github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/plugin"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -30,21 +31,21 @@ type Defaults struct {
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "fail":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			inner := InnerDefaults{}
 			if err := valNode.Decode(&inner); err != nil {
@@ -89,21 +90,21 @@ func (s *Spec) Eval(context.Context) (*api.Result, error) {
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "fail":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Fail, _ = strconv.ParseBool(valNode.Value)
 			if s.Fail {
@@ -113,7 +114,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if lo.Contains(api.BaseSpecFields, key) {
 				continue
 			}
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil

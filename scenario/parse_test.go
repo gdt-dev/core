@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/scenario"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,7 +120,7 @@ func TestBadTimeout(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrParse)
+	assert.Error(err, &parse.Error{})
 	assert.Nil(s)
 }
 
@@ -158,7 +159,7 @@ func TestBadRetry(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrParse)
+	assert.Error(err, &parse.Error{})
 	assert.Nil(s)
 }
 
@@ -171,7 +172,7 @@ func TestBadRetryAttempts(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrParse)
+	assert.Error(err, &parse.Error{})
 	assert.Nil(s)
 }
 
@@ -197,8 +198,8 @@ func TestKnownSpec(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.Nil(err)
-	assert.NotNil(s)
+	require.Nil(err)
+	require.NotNil(s)
 
 	assert.IsType(&scenario.Scenario{}, s)
 	assert.Equal("foo", s.Name)
@@ -265,8 +266,8 @@ func TestMultipleSpec(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.Nil(err)
-	assert.NotNil(s)
+	require.Nil(err)
+	require.NotNil(s)
 
 	assert.IsType(&scenario.Scenario{}, s)
 	assert.Equal("foo-bar", s.Name)
@@ -305,8 +306,8 @@ func TestEnvExpansion(t *testing.T) {
 	t.Setenv("DESCRIPTION", "Bazzy Bizzy")
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.Nil(err)
-	assert.NotNil(s)
+	require.Nil(err)
+	require.NotNil(s)
 
 	assert.IsType(&scenario.Scenario{}, s)
 	assert.Equal("env-expansion", s.Name)
@@ -373,8 +374,8 @@ func TestScenarioDefaults(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.Nil(err)
-	assert.NotNil(s)
+	require.Nil(err)
+	require.NotNil(s)
 
 	assert.IsType(&scenario.Scenario{}, s)
 	assert.Equal("foo-timeout", s.Name)

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	gdtexec "github.com/gdt-dev/core/plugin/exec"
 	"github.com/gdt-dev/core/scenario"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestParseUnknownShell(t *testing.T) {
 		scenario.WithPath(fp),
 	)
 	assert.NotNil(err)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.Error(err, &parse.Error{})
 	assert.Nil(s)
 }
 

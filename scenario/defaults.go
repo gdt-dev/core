@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 )
 
 const (
@@ -32,14 +33,14 @@ type Defaults struct {
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
@@ -50,7 +51,7 @@ func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 			case yaml.MappingNode:
 				// We support the old-style timeout:after
 				if err := valNode.Decode(&to); err != nil {
-					return api.ExpectedTimeoutAt(valNode)
+					return parse.ExpectedTimeoutAt(valNode)
 				}
 			case yaml.ScalarNode:
 				// We also support a straight string duration
@@ -58,7 +59,7 @@ func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 					After: valNode.Value,
 				}
 			default:
-				return api.ExpectedScalarOrMapAt(valNode)
+				return parse.ExpectedScalarOrMapAt(valNode)
 			}
 			_, err := time.ParseDuration(to.After)
 			if err != nil {
@@ -67,16 +68,16 @@ func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 			d.Timeout = to
 		case "retry":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			var r *api.Retry
 			if err := valNode.Decode(&r); err != nil {
-				return api.ExpectedRetryAt(valNode)
+				return parse.ExpectedRetryAt(valNode)
 			}
 			if r.Attempts != nil {
 				attempts := *r.Attempts
 				if attempts < 1 {
-					return api.InvalidRetryAttempts(valNode, attempts)
+					return parse.InvalidRetryAttempts(valNode, attempts)
 				}
 			}
 			if r.Interval != "" {

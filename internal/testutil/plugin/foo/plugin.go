@@ -10,6 +10,7 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	"github.com/gdt-dev/core/debug"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/plugin"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -34,21 +35,21 @@ type Defaults struct {
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "foo":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			inner := InnerDefaults{}
 			if err := valNode.Decode(&inner); err != nil {
@@ -85,28 +86,28 @@ func (s *Spec) Timeout() *api.Timeout {
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "foo":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Foo = valNode.Value
 		default:
 			if lo.Contains(api.BaseSpecFields, key) {
 				continue
 			}
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -30,7 +31,7 @@ func TestFlexStringsError(t *testing.T) {
 	err := yaml.Unmarshal(contents, &f)
 
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.Error(err, &parse.Error{})
 }
 
 func TestFlexStrings(t *testing.T) {

@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/plugin"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -58,24 +59,24 @@ func (s *Spec) Eval(context.Context) (*api.Result, error) {
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "bar":
 			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
+				return parse.ExpectedScalarAt(valNode)
 			}
 			if v, err := strconv.Atoi(valNode.Value); err != nil {
-				return api.ExpectedIntAt(valNode)
+				return parse.ExpectedIntAt(valNode)
 			} else {
 				s.Bar = v
 			}
@@ -83,7 +84,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if lo.Contains(api.BaseSpecFields, key) {
 				continue
 			}
-			return api.UnknownFieldAt(key, keyNode)
+			return parse.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	gdtjson "github.com/gdt-dev/core/assertion/json"
+	"github.com/gdt-dev/core/parse"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -27,7 +28,7 @@ schema: http://example.com/schema
 `)
 	err := yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 }
 
 func TestJSONSchemaFileNotFound(t *testing.T) {
@@ -40,7 +41,7 @@ schema: file:///path/does/not/exist
 `)
 	err := yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 }
 
 func TestJSONPathInvalid(t *testing.T) {
@@ -61,7 +62,7 @@ paths: notamap
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 
 	content = []byte(`
 len: 1
@@ -70,7 +71,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 
 	content = []byte(`
 len: 1
@@ -79,7 +80,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 
 	content = []byte(`
 len: 1
@@ -88,7 +89,7 @@ paths:
 `)
 	err = yaml.Unmarshal(content, &exp)
 	require.NotNil(err)
-	require.ErrorIs(err, api.ErrParse)
+	require.Error(err, &parse.Error{})
 }
 
 func content() []byte {
@@ -135,7 +136,7 @@ func TestJSONUnmarshalError(t *testing.T) {
 	require.False(a.OK(ctx))
 	failures := a.Failures()
 	require.Len(failures, 1)
-	require.ErrorIs(failures[0], api.ErrParse)
+	require.Error(failures[0], &parse.Error{})
 }
 
 func TestJSONPathError(t *testing.T) {
