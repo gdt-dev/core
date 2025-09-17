@@ -420,7 +420,7 @@ func TestExecOnFail(t *testing.T) {
 	require.NotNil(err)
 
 	debugout := string(outerr)
-	require.Contains(debugout, "assertion failed: not equal: expected dat but got cat")
+	require.Contains(debugout, "assertion failed: not in: expected stdout to contain dat")
 	require.Contains(debugout, "echo [bad kitty]")
 }
 

@@ -29,7 +29,6 @@ func TestParseUnknownShell(t *testing.T) {
 		scenario.WithPath(fp),
 	)
 	assert.NotNil(err)
-	assert.ErrorIs(err, gdtexec.ErrUnknownShell)
 	assert.ErrorIs(err, api.ErrParse)
 	assert.Nil(s)
 }

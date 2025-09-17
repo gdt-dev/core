@@ -119,7 +119,7 @@ func TestBadTimeout(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrExpectedScalarOrMap)
+	assert.ErrorIs(err, api.ErrParse)
 	assert.Nil(s)
 }
 
@@ -158,7 +158,7 @@ func TestBadRetry(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrExpectedMap)
+	assert.ErrorIs(err, api.ErrParse)
 	assert.Nil(s)
 }
 
@@ -171,7 +171,7 @@ func TestBadRetryAttempts(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.ErrorIs(err, api.ErrInvalidRetryAttempts)
+	assert.ErrorIs(err, api.ErrParse)
 	assert.Nil(s)
 }
 

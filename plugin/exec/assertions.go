@@ -74,23 +74,14 @@ func (a *pipeAssertions) OK(ctx context.Context) bool {
 	res := true
 	contents := strings.TrimSpace(a.pipe.String())
 	if a.ContainsAll != nil {
-		// When there is just a single value, we use the NotEqual error,
-		// otherwise we use the NotIn error
 		vals := a.ContainsAll.Values()
 		vals = lo.Map(vals, func(val string, _ int) string {
 			return gdtcontext.ReplaceVariables(ctx, val)
 		})
-		if len(vals) == 1 {
-			if !strings.Contains(contents, vals[0]) {
-				a.Fail(api.NotEqual(vals[0], contents))
+		for _, find := range vals {
+			if !strings.Contains(contents, find) {
+				a.Fail(api.NotIn(find, a.name))
 				res = false
-			}
-		} else {
-			for _, find := range vals {
-				if !strings.Contains(contents, find) {
-					a.Fail(api.NotIn(find, a.name))
-					res = false
-				}
 			}
 		}
 	}

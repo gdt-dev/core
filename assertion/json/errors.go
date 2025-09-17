@@ -11,21 +11,62 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// UnsupportedJSONSchemaReference returns ErrUnsupportedJSONSchemaReference for
+// a supplied URL.
+func UnsupportedJSONSchemaReference(url string, node *yaml.Node) error {
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("unsupported JSONSchema reference: %s", url),
+	}
+}
+
+// JSONSchemaFileNotFound returns ErrJSONSchemaFileNotFound for a supplied
+// path.
+func JSONSchemaFileNotFound(path string, node *yaml.Node) error {
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("unable to find JSONSchema file %q", path),
+	}
+}
+
+// JSONUnmarshalError returns an ErrFailure when JSON content cannot be
+// decoded.
+func JSONUnmarshalError(err error, node *yaml.Node) error {
+	if node != nil {
+		return &api.ParseError{
+			Line:    node.Line,
+			Column:  node.Column,
+			Message: fmt.Sprintf("failed to unmarshal JSON: %s", err),
+		}
+	}
+	return &api.ParseError{
+		Message: fmt.Sprintf("failed to unmarshal JSON: %s", err),
+	}
+}
+
+// JSONPathInvalid returns an ParseError when a JSONPath expression could not be
+// parsed.
+func JSONPathInvalid(path string, err error, node *yaml.Node) error {
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("JSONPath invalid: %s: %s", path, err),
+	}
+}
+
+// JSONPathInvalidNoRoot returns an ErrJSONPathInvalidNoRoot when a JSONPath
+// expression does not start with '$'.
+func JSONPathInvalidNoRoot(path string, node *yaml.Node) error {
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("JSONPath expression %s invalid: expression must start with '$'", path),
+	}
+}
+
 var (
-	// ErrJSONPathInvalid returns an ErrParse when a JSONPath expression could
-	// not be parsed.
-	ErrJSONPathInvalid = fmt.Errorf(
-		"%w: JSONPath invalid", api.ErrParse,
-	)
-	// ErrJSONPathInvalidNoRoot returns an ErrParse when a JSONPath expression
-	// does not start with '$'
-	ErrJSONPathInvalidNoRoot = fmt.Errorf(
-		"%w: expression must start with '$'", ErrJSONPathInvalid,
-	)
-	// ErrJSONUnmarshalError is returned when JSON content cannot be decoded
-	ErrJSONUnmarshalError = fmt.Errorf(
-		"%w: failed to unmarshal JSON", api.ErrFailure,
-	)
 	// ErrJSONPathNotFound returns an ErrFailure when a JSONPath expression
 	// could not evaluate to a found element.
 	ErrJSONPathNotFound = fmt.Errorf(
@@ -63,67 +104,7 @@ var (
 	ErrJSONFormatNotEqual = fmt.Errorf(
 		"%w: JSON format not equal", api.ErrFailure,
 	)
-	// ErrJSONSchemaFileNotFound indicates a specified JSONSchema file could
-	// not be found.
-	ErrJSONSchemaFileNotFound = fmt.Errorf(
-		"%w: unable to find JSONSchema file",
-		api.ErrParse,
-	)
-	// ErrUnsupportedJSONSchemaReference indicates that a specified JSONSchema
-	// file is referenced as an HTTP(S) URL instead of a file URI.
-	ErrUnsupportedJSONSchemaReference = fmt.Errorf(
-		"%w: unsupported JSONSchema reference",
-		api.ErrParse,
-	)
 )
-
-// UnsupportedJSONSchemaReference returns ErrUnsupportedJSONSchemaReference for
-// a supplied URL.
-func UnsupportedJSONSchemaReference(url string, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: %s at line %d, column %d",
-		ErrUnsupportedJSONSchemaReference, url, node.Line, node.Column,
-	)
-}
-
-// JSONSchemaFileNotFound returns ErrJSONSchemaFileNotFound for a supplied
-// path.
-func JSONSchemaFileNotFound(path string, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: %s at line %d, column %d",
-		ErrJSONSchemaFileNotFound, path, node.Line, node.Column,
-	)
-}
-
-// JSONUnmarshalError returns an ErrFailure when JSON content cannot be
-// decoded.
-func JSONUnmarshalError(err error, node *yaml.Node) error {
-	if node != nil {
-		return fmt.Errorf(
-			"%w: %s at line %d, column %d",
-			ErrJSONUnmarshalError, err, node.Line, node.Column,
-		)
-	}
-	return fmt.Errorf("%w: %s", ErrJSONUnmarshalError, err)
-}
-
-// JSONPathInvalid returns an ErrParse when a JSONPath expression could not be
-// parsed.
-func JSONPathInvalid(path string, err error, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: %s: %s at line %d, column %d",
-		ErrJSONPathInvalid, path, err, node.Line, node.Column,
-	)
-}
-
-// JSONPathInvalidNoRoot returns an ErrJSONPathInvalidNoRoot when a JSONPath
-// expression does not start with '$'.
-func JSONPathInvalidNoRoot(path string, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: %s at line %d, column %d",
-		ErrJSONPathInvalidNoRoot, path, node.Line, node.Column,
-	)
-}
 
 // JSONPathNotFound returns an ErrFailure when a JSONPath expression could not
 // evaluate to a found element.

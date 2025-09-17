@@ -12,49 +12,37 @@ import (
 	"github.com/gdt-dev/core/api"
 )
 
-var (
-	// ErrExecEmpty indicates that the user specified an empty "exec"
-	// field
-	ErrExecEmpty = fmt.Errorf(
-		"%w: expected non-empty exec field", api.ErrParse,
-	)
-	// ErrExecInvalid indicates that the user specified an invalid "exec" field
-	ErrExecInvalid = fmt.Errorf(
-		"%w: invalid exec field", api.ErrParse,
-	)
-	// ErrUnknownShell returns an ErrParse when an unknown shell is specified
-	ErrUnknownShell = fmt.Errorf(
-		"%w: unknown shell", api.ErrParse,
-	)
-)
-
 // ExecEmpty returns an ErrExecEmpty with the line/column of the supplied YAML
 // node.
 func ExecEmpty(node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w at line %d, column %d",
-		ErrExecEmpty, node.Line, node.Column,
-	)
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected non-empty exec field",
+	}
 }
 
 // ExecInvalidShellParse returns an ErrExecInvalid with the error from
 // shlex.Split
 func ExecInvalidShellParse(err error, node *yaml.Node) error {
-	return fmt.Errorf(
-		"%w: cannot parse shell args: %s at line %d, column %d",
-		ErrExecInvalid, err, node.Line, node.Column,
-	)
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("cannot parse shell args: %s", err),
+	}
+}
+
+// ExecUnknownShell returns a wrapped version of ParseError that indicates the
+// user specified an unknown shell.
+func ExecUnknownShell(shell string, node *yaml.Node) error {
+	return &api.ParseError{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: fmt.Sprintf("unknown shell %q", shell),
+	}
 }
 
 // ExecRuntimeError returns a RuntimeError with an error from the Exec() call.
 func ExecRuntimeError(err error) error {
 	return fmt.Errorf("%w: %s", api.RuntimeError, err)
-}
-
-// ExecUnknownShell returns a wrapped version of ErrParse that indicates the
-// user specified an unknown shell.
-func ExecUnknownShell(shell string) error {
-	return fmt.Errorf(
-		"%w: %s", ErrUnknownShell, shell,
-	)
 }

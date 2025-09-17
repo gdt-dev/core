@@ -71,7 +71,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 			s.Shell = strings.TrimSpace(valNode.Value)
 			if _, err := exec.LookPath(s.Shell); err != nil {
-				return ExecUnknownShell(s.Shell)
+				return ExecUnknownShell(s.Shell, valNode)
 			}
 		case "exec":
 			if valNode.Kind != yaml.ScalarNode {
