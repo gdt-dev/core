@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/gdt-dev/core/api"
-	gdtapi "github.com/gdt-dev/core/api"
 	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/plugin"
 	"github.com/samber/lo"
@@ -85,7 +84,8 @@ func (s *Spec) Timeout() *api.Timeout {
 }
 
 func (s *Spec) Eval(context.Context) (*api.Result, error) {
-	return nil, fmt.Errorf("%w: Indy, bad dates!", gdtapi.RuntimeError)
+	// nolint:staticcheck
+	return nil, fmt.Errorf("%w: Indy, bad dates!", api.RuntimeError)
 }
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
@@ -108,6 +108,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 			s.Fail, _ = strconv.ParseBool(valNode.Value)
 			if s.Fail {
+				// nolint:staticcheck
 				return fmt.Errorf("Indy, bad parse!")
 			}
 		default:

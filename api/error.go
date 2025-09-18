@@ -112,6 +112,7 @@ func UnknownSourceType(source interface{}) error {
 var (
 	// RuntimeError is the base error class for all errors occurring during
 	// runtime (and not during the parsing of a scenario or spec)
+	// nolint:staticcheck
 	RuntimeError = errors.New("runtime error")
 	// ErrRequiredFixture is returned when a required fixture has not
 	// been registered with the context.

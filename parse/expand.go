@@ -23,5 +23,5 @@ const (
 func ExpandWithFixedDoubleDollar(subject string) string {
 	os.Setenv(dollarSignReplacementToken, "$")
 	replaceStr := fmt.Sprintf("${%s}", dollarSignReplacementToken)
-	return os.ExpandEnv(strings.Replace(subject, "$$", replaceStr, -1))
+	return os.ExpandEnv(strings.ReplaceAll(subject, "$$", replaceStr))
 }
