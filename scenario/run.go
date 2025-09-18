@@ -17,16 +17,114 @@ import (
 	"github.com/gdt-dev/core/api"
 	gdtcontext "github.com/gdt-dev/core/context"
 	"github.com/gdt-dev/core/debug"
+	"github.com/gdt-dev/core/run"
+	"github.com/gdt-dev/core/testunit"
 )
 
 // Run executes the scenario. The error that is returned will always be derived
 // from `api.RuntimeError` and represents an *unrecoverable* error.
 //
 // Test assertion failures are *not* considered errors. The Scenario.Run()
-// method controls whether `testing.T.Fail()` or `testing.T.Skip()` is called
-// which will mark the test units failed or skipped if a test unit evaluates to
+// method controls whether the test runner calls `Fail()` or `Skip()` which
+// will mark the test units failed or skipped if a test unit evaluates to
 // false.
-func (s *Scenario) Run(ctx context.Context, t *testing.T) error {
+func (s *Scenario) Run(ctx context.Context, subject any) error {
+	switch subject := subject.(type) {
+	case *testing.T:
+		return s.runGo(ctx, subject)
+	case *run.Run:
+		return s.runExternal(ctx, subject)
+	default:
+		return fmt.Errorf("unknown run type %T", subject)
+	}
+}
+
+// runExternal executes the scenario using the `gdt` CLI tool as the underlying
+// test runner and a `*RunState` to track test run state. The error that is
+// returned will always be derived from `api.RuntimeError` and represents an
+// *unrecoverable* error.
+func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
+	ctx = gdtcontext.PushTrace(ctx, s.Title())
+	defer func() {
+		ctx = gdtcontext.PopTrace(ctx)
+	}()
+
+	rootUnit := testunit.New(
+		ctx,
+		testunit.WithName(s.Title()),
+	)
+
+	if len(s.Fixtures) > 0 {
+		fixtures := gdtcontext.Fixtures(ctx)
+		for _, fname := range s.Fixtures {
+			lookup := strings.ToLower(fname)
+			fix, found := fixtures[lookup]
+			if !found {
+				return api.RequiredFixtureMissing(fname)
+			}
+			if err := fix.Start(ctx); err != nil {
+				return err
+			}
+			defer fix.Stop(ctx)
+		}
+	}
+
+	// If the test author has specified any pre-flight checks in the `skip-if`
+	// collection, evaluate those first and if any failed, skip the scenario's
+	// tests.
+	for _, skipIf := range s.SkipIf {
+		res, err := skipIf.Eval(ctx)
+		if err != nil {
+			return err
+		}
+		if len(res.Failures()) == 0 {
+			rootUnit.Skipf(
+				"skip-if: %s passed. skipping test.",
+				skipIf.Base().Title(),
+			)
+			return nil
+		}
+	}
+
+	var res *api.Result
+	var err error
+
+	for idx, t := range s.Tests {
+		tu := testunit.New(
+			ctx,
+			testunit.WithName(
+				fmt.Sprintf(
+					"%s/%s",
+					s.Title(),
+					t.Base().Title(),
+				),
+			),
+		)
+		ctx = gdtcontext.SetTestUnit(ctx, tu)
+		res, err = s.runSpec(ctx, tu, idx)
+		if err != nil {
+			break
+		}
+
+		// Results can have arbitrary run data stored in them and we
+		// save this prior run data in the top-level context (and pass
+		// that context to the next Run invocation).
+		if res.HasData() {
+			ctx = gdtcontext.SetRun(ctx, res.Data())
+		}
+		if len(res.Failures()) > 0 {
+			tu.FailNow()
+		}
+		run.StoreResult(idx, s.Path, tu, res)
+	}
+	return err
+}
+
+// runGo executes the scenario using the `go test` tool as the underlying test
+// runner and the Go `*testing.T` to track test run state. The error that is
+// returned will always be derived from `api.RuntimeError` and represents an
+// *unrecoverable* error.
+func (s *Scenario) runGo(ctx context.Context, t *testing.T) error {
 	ctx = gdtcontext.PushTrace(ctx, s.Title())
 	defer func() {
 		ctx = gdtcontext.PopTrace(ctx)
@@ -82,7 +180,7 @@ func (s *Scenario) Run(ctx context.Context, t *testing.T) error {
 			// save this prior run data in the top-level context (and pass
 			// that context to the next Run invocation).
 			if res.HasData() {
-				ctx = gdtcontext.StorePriorRun(ctx, res.Data())
+				ctx = gdtcontext.SetRun(ctx, res.Data())
 			}
 
 			for _, fail := range res.Failures() {
@@ -101,7 +199,7 @@ type runSpecRes struct {
 // runSpec wraps the execution of a single test spec
 func (s *Scenario) runSpec(
 	ctx context.Context, // this is the overall scenario's context
-	t *testing.T, // T specific to the goroutine running this test spec
+	t api.T, // T specific to the goroutine running this test spec
 	idx int, // index of the test spec within Scenario.Tests
 ) (res *api.Result, err error) {
 	// Create a brand new context that inherits the top-level context's
@@ -131,7 +229,7 @@ func (s *Scenario) runSpec(
 
 	wait := sb.Wait
 	if wait != nil && wait.Before != "" {
-		debug.Println(specCtx, "wait: %s before", wait.Before)
+		debug.Printf(specCtx, "wait: %s before", wait.Before)
 		time.Sleep(wait.BeforeDuration())
 	}
 
@@ -154,7 +252,7 @@ func (s *Scenario) runSpec(
 	}
 
 	if wait != nil && wait.After != "" {
-		debug.Println(specCtx, "wait: %s after", wait.After)
+		debug.Printf(specCtx, "wait: %s after", wait.After)
 		time.Sleep(wait.AfterDuration())
 	}
 	return res, nil
@@ -176,7 +274,7 @@ func (s *Scenario) execSpec(
 			ch <- runSpecRes{nil, err}
 			return
 		}
-		debug.Println(
+		debug.Printf(
 			ctx, "spec/run: single-shot (no retries) ok: %v",
 			!res.Failed(),
 		)
@@ -215,7 +313,7 @@ func (s *Scenario) execSpec(
 	success := false
 	for tick := range ticker.C {
 		if (maxAttempts > 0) && (attempts > maxAttempts) {
-			debug.Println(
+			debug.Printf(
 				ctx, "spec/run: exceeded max attempts %d. stopping.",
 				maxAttempts,
 			)
@@ -230,7 +328,7 @@ func (s *Scenario) execSpec(
 			return
 		}
 		success = !res.Failed()
-		debug.Println(
+		debug.Printf(
 			ctx, "spec/run: attempt %d after %s ok: %v",
 			attempts, after, success,
 		)
@@ -239,7 +337,7 @@ func (s *Scenario) execSpec(
 			break
 		}
 		for _, f := range res.Failures() {
-			debug.Println(
+			debug.Printf(
 				ctx, "spec/run: attempt %d failure: %s",
 				attempts, f,
 			)
@@ -259,7 +357,7 @@ func (s *Scenario) hasTimeoutConflict(
 	if ok && !d.IsZero() {
 		now := time.Now()
 		s.Timings.GoTestTimeout = d.Sub(now)
-		debug.Println(
+		debug.Printf(
 			ctx, "scenario/run: go test tool timeout: %s",
 			(s.Timings.GoTestTimeout + time.Second).Round(time.Second),
 		)
@@ -292,7 +390,7 @@ func getTimeout(
 ) *api.Timeout {
 	evalTimeout := eval.Timeout()
 	if evalTimeout != nil {
-		debug.Println(
+		debug.Printf(
 			ctx, "using timeout of %s",
 			evalTimeout.After,
 		)
@@ -302,7 +400,7 @@ func getTimeout(
 	sb := eval.Base()
 	baseTimeout := sb.Timeout
 	if baseTimeout != nil {
-		debug.Println(
+		debug.Printf(
 			ctx, "using timeout of %s",
 			baseTimeout.After,
 		)
@@ -310,7 +408,7 @@ func getTimeout(
 	}
 
 	if defaults != nil && defaults.Timeout != nil {
-		debug.Println(
+		debug.Printf(
 			ctx, "using timeout of %s [scenario default]",
 			defaults.Timeout.After,
 		)
@@ -321,7 +419,7 @@ func getTimeout(
 	pluginTimeout := pluginInfo.Timeout
 
 	if pluginTimeout != nil {
-		debug.Println(
+		debug.Printf(
 			ctx, "using timeout of %s [plugin default]",
 			pluginTimeout.After,
 		)

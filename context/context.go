@@ -12,16 +12,19 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/testunit"
 )
 
 type ContextKey string
 
 var (
-	debugKey    = ContextKey("gdt.debug")
-	traceKey    = ContextKey("gdt.trace")
-	pluginsKey  = ContextKey("gdt.plugins")
-	fixturesKey = ContextKey("gdt.fixtures")
-	runKey      = ContextKey("gdt.run")
+	debugPrefixKey = ContextKey("gdt.debug.prefix")
+	debugKey       = ContextKey("gdt.debug")
+	traceKey       = ContextKey("gdt.trace")
+	pluginsKey     = ContextKey("gdt.plugins")
+	fixturesKey    = ContextKey("gdt.fixtures")
+	runKey         = ContextKey("gdt.run")
+	unitKey        = ContextKey("gdt.unit")
 )
 
 // ContextModifier sets some value on the context
@@ -88,6 +91,12 @@ func WithDebug(writers ...io.Writer) ContextModifier {
 	}
 }
 
+func WithDebugPrefix(prefix string) ContextModifier {
+	return func(ctx context.Context) context.Context {
+		return context.WithValue(ctx, debugPrefixKey, prefix)
+	}
+}
+
 // WithPlugins sets a context's Plugins
 func WithPlugins(plugins []api.Plugin) ContextModifier {
 	return func(ctx context.Context) context.Context {
@@ -116,6 +125,14 @@ func SetDebug(
 		writers = []io.Writer{os.Stdout}
 	}
 	return context.WithValue(ctx, debugKey, writers)
+}
+
+// SetDebugPrefix sets the prefix on the gdt debug log entries.
+func SetDebugPrefix(
+	ctx context.Context,
+	prefix string,
+) context.Context {
+	return context.WithValue(ctx, debugPrefixKey, prefix)
 }
 
 // RegisterFixture registers a named fixtures with the context
@@ -186,6 +203,15 @@ func PopTrace(
 	stack := TraceStack(ctx)
 	stack = stack[:len(stack)-1]
 	return context.WithValue(ctx, traceKey, stack)
+}
+
+// SetTestUnit sets the current test unit in the context. Any previously existing
+// test unit in the context is overwritten.
+func SetTestUnit(
+	ctx context.Context,
+	tu *testunit.TestUnit,
+) context.Context {
+	return context.WithValue(ctx, unitKey, tu)
 }
 
 // New returns a new Context

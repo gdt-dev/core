@@ -4,6 +4,16 @@
 
 package exec
 
+import (
+	"bytes"
+	"context"
+	"os"
+	"strings"
+
+	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/debug"
+)
+
 const (
 	varFromStdout = "stdout"
 	varFromStderr = "stderr"
@@ -23,3 +33,32 @@ type VarEntry struct {
 // facilitating the passing of variables between test specs potentially
 // provided by different gdt Plugins.
 type Variables map[string]VarEntry
+
+// saveVars examines the supplied Variables and what we got back from the
+// Action.Do() call and sets any variables in the run data context key.
+func saveVars(
+	ctx context.Context,
+	vars Variables,
+	outbuf *bytes.Buffer,
+	errbuf *bytes.Buffer,
+	ec int,
+	res *api.Result,
+) {
+	for varName, entry := range vars {
+		switch entry.From {
+		case varFromStdout:
+			debug.Printf(ctx, "save.vars: %s -> <stdout>", varName)
+			res.SetData(varName, strings.TrimSpace(outbuf.String()))
+		case varFromStderr:
+			debug.Printf(ctx, "save.vars: %s -> <stderr>", varName)
+			res.SetData(varName, strings.TrimSpace(errbuf.String()))
+		case varFromRC:
+			debug.Printf(ctx, "save.vars: %s -> <returncode>", varName)
+			res.SetData(varName, ec)
+		default:
+			extracted := os.Getenv(entry.From)
+			debug.Printf(ctx, "save.vars: %s -> %s", varName, extracted)
+			res.SetData(varName, extracted)
+		}
+	}
+}

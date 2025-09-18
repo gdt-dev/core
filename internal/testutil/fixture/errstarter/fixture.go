@@ -13,6 +13,7 @@ import (
 
 var (
 	errStarter = func(_ context.Context) error {
+		// nolint:staticcheck
 		return fmt.Errorf("error starting fixture!")
 	}
 

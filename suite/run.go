@@ -6,13 +6,12 @@ package suite
 
 import (
 	"context"
-	"testing"
 )
 
-// Run executes the tests in the test case
-func (s *Suite) Run(ctx context.Context, t *testing.T) error {
+// Run executes the tests in the test suite
+func (s *Suite) Run(ctx context.Context, subject any) error {
 	for _, sc := range s.Scenarios {
-		if err := sc.Run(ctx, t); err != nil {
+		if err := sc.Run(ctx, subject); err != nil {
 			return err
 		}
 	}

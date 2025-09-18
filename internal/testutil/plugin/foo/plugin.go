@@ -115,7 +115,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 
 func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 	fails := []error{}
-	debug.Println(ctx, "in %s Foo=%s", s.Title(), s.Foo)
+	debug.Printf(ctx, "in %s Foo=%s", s.Title(), s.Foo)
 	// This is just a silly test to demonstrate how to write Eval() methods
 	// for plugin Spec specialization classes.
 	if s.Name == "bar" && s.Foo != "bar" {

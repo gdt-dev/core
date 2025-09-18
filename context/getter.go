@@ -12,10 +12,12 @@ import (
 	"strings"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/testunit"
 )
 
 const (
-	traceDelimiter = "/"
+	defaultDebugPrefix = "[gdt]"
+	traceDelimiter     = "/"
 )
 
 // Trace gets a context's trace name stack joined together with
@@ -49,6 +51,18 @@ func Debug(ctx context.Context) []io.Writer {
 		return v.([]io.Writer)
 	}
 	return []io.Writer{}
+}
+
+// DebugPrefix gets a context's debug prefix or the default prefix if none is
+// set.
+func DebugPrefix(ctx context.Context) string {
+	if ctx == nil {
+		return defaultDebugPrefix
+	}
+	if v := ctx.Value(debugPrefixKey); v != nil {
+		return v.(string)
+	}
+	return defaultDebugPrefix
 }
 
 // Plugins gets a context's Plugins
@@ -87,6 +101,17 @@ func Run(ctx context.Context) map[string]any {
 // deprecated: use Run()
 func PriorRun(ctx context.Context) map[string]any {
 	return Run(ctx)
+}
+
+// TestUnit gets a context's test unit
+func TestUnit(ctx context.Context) *testunit.TestUnit {
+	if ctx == nil {
+		return nil
+	}
+	if v := ctx.Value(unitKey); v != nil {
+		return v.(*testunit.TestUnit)
+	}
+	return nil
 }
 
 // ReplaceVariables replaces all occurrences of any of the variables in the

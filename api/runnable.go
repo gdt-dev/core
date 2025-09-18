@@ -6,15 +6,15 @@ package api
 
 import (
 	"context"
-	"testing"
 )
 
-// Runnable are things that Run a `*testing.T`
+// Runnable are things that Run either a `*testing.T` or a `*run.Options` that
+// tracks execution of test units being run.
 type Runnable interface {
-	// Run accepts a context and a `*testing.T` and runs some tests within that
-	// context
+	// Run accepts a context and either a `*testing.T` or a `*run.Options` and
+	// runs some tests within that context.
 	//
 	// Errors returned by Run() are **RuntimeErrors**, not failures in
 	// assertions.
-	Run(context.Context, *testing.T) error
+	Run(context.Context, any) error
 }

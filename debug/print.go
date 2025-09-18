@@ -13,52 +13,62 @@ import (
 )
 
 // Printf writes a message with optional message arguments to the context's
-// Debug output.
+// Debug output. The behaviour is analogous to `fmt.Printf`.
 func Printf(
 	ctx context.Context,
 	format string,
-	args ...interface{},
+	args ...any,
 ) {
+	tu := gdtcontext.TestUnit(ctx)
 	writers := gdtcontext.Debug(ctx)
-	if len(writers) == 0 {
+	if len(writers) == 0 && tu == nil {
 		return
 	}
 
 	trace := gdtcontext.Trace(ctx)
 
-	if !strings.HasPrefix(format, "[gdt] ") {
-		format = "[gdt] [" + trace + "] " + format
+	prefix := gdtcontext.DebugPrefix(ctx)
+	msg := prefix
+	if trace != "" {
+		msg += " [" + trace + "] "
 	}
-	msg := fmt.Sprintf(format, args...)
+	msg += fmt.Sprintf(format, args...)
+	msg = strings.TrimSuffix(msg, "\n") + "\n"
 	for _, w := range writers {
 		//nolint:errcheck
 		w.Write([]byte(msg))
+	}
+	if tu != nil {
+		tu.Log(strings.TrimSuffix(msg, "\n"))
 	}
 }
 
 // Println writes a message with optional message arguments to the context's
-// Debug output, ensuring there is a newline in the message line.
+// Debug output, ensuring there is a newline in the message line. This is
+// analogous to `fmt.Println` behaviour.
 func Println(
 	ctx context.Context,
-	format string,
-	args ...interface{},
+	args ...any,
 ) {
+	tu := gdtcontext.TestUnit(ctx)
 	writers := gdtcontext.Debug(ctx)
-	if len(writers) == 0 {
+	if len(writers) == 0 && tu == nil {
 		return
 	}
 
 	trace := gdtcontext.Trace(ctx)
 
-	if !strings.HasPrefix(format, "[gdt] ") {
-		format = "[gdt] [" + trace + "] " + format
+	prefix := gdtcontext.DebugPrefix(ctx)
+	msg := prefix
+	if trace != "" {
+		msg += " [" + trace + "] "
 	}
-	if !strings.HasSuffix(format, "\n") {
-		format += "\n"
-	}
-	msg := fmt.Sprintf(format, args...)
+	msg += fmt.Sprintln(args...)
 	for _, w := range writers {
 		//nolint:errcheck
 		w.Write([]byte(msg))
+	}
+	if tu != nil {
+		tu.Log(strings.TrimSuffix(msg, "\n"))
 	}
 }

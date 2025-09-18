@@ -67,7 +67,7 @@ func (a *Action) Do(
 		return gdtcontext.ReplaceVariables(ctx, arg)
 	})
 
-	debug.Println(ctx, "exec: %s %s", target, args)
+	debug.Printf(ctx, "exec: %s %s", target, args)
 
 	cmd := exec.CommandContext(ctx, target, args...)
 
@@ -89,10 +89,10 @@ func (a *Action) Do(
 	}
 	if outbuf != nil {
 		if _, err = outbuf.ReadFrom(outpipe); err != nil {
-			debug.Println(ctx, "exec: error reading from stdout: %s", err)
+			debug.Printf(ctx, "exec: error reading from stdout: %s", err)
 		}
 		if outbuf.Len() > 0 {
-			debug.Println(
+			debug.Printf(
 				ctx, "exec: stdout: %s",
 				strings.TrimSpace(outbuf.String()),
 			)
@@ -100,10 +100,10 @@ func (a *Action) Do(
 	}
 	if errbuf != nil {
 		if _, err = errbuf.ReadFrom(errpipe); err != nil {
-			debug.Println(ctx, "exec: error reading from stderr: %s", err)
+			debug.Printf(ctx, "exec: error reading from stderr: %s", err)
 		}
 		if errbuf.Len() > 0 {
-			debug.Println(
+			debug.Printf(
 				ctx, "exec: stderr: %s",
 				strings.TrimSpace(errbuf.String()),
 			)
