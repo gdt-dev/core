@@ -7,7 +7,7 @@ tests:
         any:
          - thisdoesnotexist
          - neitherdoesthisexist
-         - parse.go
+         - ls-contains.yaml
   # Variants of contains-any
   - exec: ls -l
     assert:
@@ -15,16 +15,16 @@ tests:
         contains_one_of:
          - thisdoesnotexist
          - neitherdoesthisexist
-         - parse.go
+         - ls-contains.yaml
   - exec: ls -l
     assert:
       out:
         contains-any:
-         - parse.go
+         - ls-contains.yaml
   - exec: ls -l
     assert:
       out:
-        any: parse.go
+        any: ls-contains.yaml
   # To test the stderr assertions, we redirect stdout to stderr in a shell
   # command...
   - exec: "ls -l 1>&2"
@@ -34,4 +34,4 @@ tests:
         any:
          - thisdoesnotexist
          - neitherdoesthisexist
-         - parse.go
+         - ls-contains.yaml

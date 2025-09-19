@@ -5,30 +5,30 @@ tests:
     assert:
       out:
         contains:
-         - parse.go
+         - ls-contains.yaml
   # Variants of contains-all
   - exec: ls -l
     assert:
       out:
-        is: parse.go
+        is: ls-contains.yaml
   - exec: ls -l
     assert:
       out:
         is:
-         - parse.go
+         - ls-contains.yaml
   - exec: ls -l
     assert:
       out:
-        contains: parse.go
+        contains: ls-contains.yaml
   - exec: ls -l
     assert:
       out:
         contains-all:
-         - parse.go
+         - ls-contains.yaml
   - exec: ls -l
     assert:
       out:
-        all: parse.go
+        all: ls-contains.yaml
   # To test the stderr assertions, we redirect stdout to stderr in a shell
   # command...
   - exec: "ls -l 1>&2"
@@ -36,4 +36,4 @@ tests:
     assert:
       err:
         contains:
-         - parse.go
+         - ls-contains.yaml

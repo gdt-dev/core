@@ -7,6 +7,8 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -30,6 +32,17 @@ import (
 // will mark the test units failed or skipped if a test unit evaluates to
 // false.
 func (s *Scenario) Run(ctx context.Context, subject any) error {
+	if s.Path != "" {
+		// NOTE(jaypipes): This is necessary to allow relative path lookups for
+		// file loads *within* the test scenario itself.
+		cwd, _ := os.Getwd()
+		if err := os.Chdir(filepath.Dir(s.Path)); err != nil {
+			return err
+		}
+		defer func() {
+			_ = os.Chdir(cwd)
+		}()
+	}
 	switch subject := subject.(type) {
 	case *testing.T:
 		return s.runGo(ctx, subject)
