@@ -5,6 +5,10 @@
 package suite
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/gdt-dev/core/scenario"
 )
 
@@ -28,6 +32,23 @@ type Suite struct {
 	Fixtures []string `yaml:"fixtures,omitempty"`
 	// Scenarios is a collection of test scenarios in this test suite
 	Scenarios []*scenario.Scenario `yaml:"-"`
+}
+
+// Title returns the nem of the Suite or, if missing, the short path to the
+// suite.
+func (s *Suite) Title() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	p := s.Path
+	for _, ext := range validFileExts {
+		p = strings.TrimSuffix(p, ext)
+	}
+	parts := strings.Split(p, string(os.PathSeparator))
+	if len(parts) == 1 {
+		return parts[0]
+	}
+	return fmt.Sprintf("%s/%s", parts[len(parts)-2], parts[len(parts)-1])
 }
 
 // SuiteModifier sets some value on the test suite

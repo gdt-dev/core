@@ -8,6 +8,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -180,6 +181,16 @@ func StorePriorRun(
 	data map[string]any,
 ) context.Context {
 	return SetRun(ctx, data)
+}
+
+// SetTrace sets the trace stack of a context based on a supplied string
+// representing a trace stack.
+func SetTrace(
+	ctx context.Context,
+	trace string,
+) context.Context {
+	stack := strings.Split(trace, traceDelimiter)
+	return context.WithValue(ctx, traceKey, stack)
 }
 
 // PushTrace pushes a debug/trace name onto the debug/trace stack. It is used
