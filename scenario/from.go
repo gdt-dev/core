@@ -6,6 +6,8 @@ package scenario
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 
@@ -32,6 +34,17 @@ func FromBytes(
 	mods ...ScenarioModifier,
 ) (*Scenario, error) {
 	s := New(mods...)
+	if s.Path != "" {
+		// NOTE(jaypipes): This is necessary to allow relative path lookups for
+		// file loads *within* the test scenario itself.
+		cwd, _ := os.Getwd()
+		if err := os.Chdir(filepath.Dir(s.Path)); err != nil {
+			return nil, err
+		}
+		defer func() {
+			_ = os.Chdir(cwd)
+		}()
+	}
 	expanded := parse.ExpandWithFixedDoubleDollar(string(contents))
 	if err := yaml.Unmarshal([]byte(expanded), s); err != nil {
 		if ep, ok := err.(*parse.Error); ok {
