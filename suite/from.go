@@ -22,25 +22,37 @@ func FromDir(
 	dirPath string,
 	mods ...SuiteModifier,
 ) (*Suite, error) {
-	if _, err := os.Stat(dirPath); err != nil {
+	absPath, err := filepath.Abs(dirPath)
+	if err != nil {
 		return nil, err
 	}
+	if _, err := os.Stat(absPath); err != nil {
+		return nil, err
+	}
+
 	// List YAML files in the directory and parse each into a testable unit
-	mods = append(mods, WithPath(dirPath))
+	mods = append(mods, WithPath(absPath))
 	s := New(mods...)
 
+	// Need to chdir here so that test scenarios may reference files in
+	// relative directories
+	if err := os.Chdir(absPath); err != nil {
+		return nil, err
+	}
+
 	if err := filepath.Walk(
-		dirPath,
+		absPath,
 		func(path string, info os.FileInfo, _ error) error {
 			if info.IsDir() {
+				// We only go one level deep.
 				return nil
 			}
 			suffix := filepath.Ext(path)
 			if !lo.Contains(validFileExts, suffix) {
 				return nil
 			}
-			f, err := os.Open(path)
 
+			f, err := os.Open(path)
 			if err != nil {
 				return err
 			}

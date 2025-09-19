@@ -29,7 +29,7 @@ func TestFromDirExecSuite(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(s)
 
-	assert.Equal("testdata/exec", s.Path)
+	assert.Equal("testdata/exec", s.Title())
 	// NOTE(jaypipes): There are actually 3 valid YAML files in the
 	// suite/testdata/exec suite, but one isn't a gdt scenario and therefore
 	// should not appear in the collected Suite.Tests.

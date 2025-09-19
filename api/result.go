@@ -19,6 +19,9 @@ type Result struct {
 	// failures is the collection of error messages from assertion failures
 	// that occurred during Eval(). These are *not* `gdterrors.RuntimeError`.
 	failures []error
+	// cleanups is the collection of cleanup functions that should be executed
+	// if the Result succeeded.
+	cleanups []func()
 	// data is a map, keyed by plugin name, of data about the spec run. Plugins
 	// can place anything they want in here and grab it from the context with
 	// the `gdtcontext.PriorRunData()` function. Plugins are responsible for
@@ -45,6 +48,26 @@ func (r *Result) Failed() bool {
 // Eval().
 func (r *Result) Failures() []error {
 	return r.failures
+}
+
+// Cleanups returns the set of cleanup functions. The list returned is in
+// first-in, first-out order. It's the responsibility of callers to reverse
+// this collection of cleanup functions (or reverse the aggregated collection
+// of all cleanup functions for a suite or scenario).
+func (r *Result) Cleanups() []func() {
+	return r.cleanups
+}
+
+// AddCleanup adds a cleanup function that will be executed if the Result has
+// successful.
+func (r *Result) AddCleanup(fn func()) {
+	r.cleanups = append(r.cleanups, fn)
+}
+
+// HasCleanups returns true if there are registered cleanup functions in the
+// Result.
+func (r *Result) HasCleanups() bool {
+	return len(r.cleanups) > 0
 }
 
 // SetData sets a value in the result's run data cache.

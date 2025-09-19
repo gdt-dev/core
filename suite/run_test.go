@@ -17,7 +17,7 @@ func TestRunExecSuite(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 
-	s, err := suite.FromDir("testdata/exec")
+	s, err := suite.FromDir("")
 	require.Nil(err)
 	require.NotNil(s)
 

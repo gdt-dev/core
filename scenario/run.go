@@ -7,6 +7,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -53,6 +54,7 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		ctx,
 		testunit.WithName(s.Title()),
 	)
+	ctx = gdtcontext.SetTestUnit(ctx, rootUnit)
 
 	if len(s.Fixtures) > 0 {
 		fixtures := gdtcontext.Fixtures(ctx)
@@ -86,9 +88,10 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		}
 	}
 
-	var res *api.Result
 	var err error
 
+	scenCleanups := []func(){}
+	scenOK := true
 	for idx, t := range s.Tests {
 		tu := testunit.New(
 			ctx,
@@ -101,10 +104,12 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 			),
 		)
 		ctx = gdtcontext.SetTestUnit(ctx, tu)
-		res, err = s.runSpec(ctx, tu, idx)
+		res, err := s.runSpec(ctx, tu, idx)
 		if err != nil {
 			break
 		}
+
+		scenCleanups = append(scenCleanups, res.Cleanups()...)
 
 		// Results can have arbitrary run data stored in them and we
 		// save this prior run data in the top-level context (and pass
@@ -115,7 +120,15 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		if len(res.Failures()) > 0 {
 			tu.FailNow()
 		}
+		scenOK = scenOK && !tu.Failed()
+
 		run.StoreResult(idx, s.Path, tu, res)
+	}
+	slices.Reverse(scenCleanups)
+	if scenOK {
+		for _, cleanup := range scenCleanups {
+			cleanup()
+		}
 	}
 	return err
 }
@@ -174,6 +187,10 @@ func (s *Scenario) runGo(ctx context.Context, t *testing.T) error {
 			res, err = s.runSpec(ctx, tt, idx)
 			if err != nil {
 				break
+			}
+
+			for _, cleanup := range res.Cleanups() {
+				t.Cleanup(cleanup)
 			}
 
 			// Results can have arbitrary run data stored in them and we
