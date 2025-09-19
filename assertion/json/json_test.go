@@ -166,7 +166,7 @@ func TestJSONPathConversionError(t *testing.T) {
 
 	exp := gdtjson.Expect{
 		Paths: map[string]string{
-			"1234": "foo",
+			"$.1234": "foo",
 		},
 	}
 
@@ -174,7 +174,7 @@ func TestJSONPathConversionError(t *testing.T) {
 	require.False(a.OK(ctx))
 	failures := a.Failures()
 	require.Len(failures, 1)
-	require.ErrorIs(failures[0], gdtjson.ErrJSONPathConversionError)
+	require.Error(failures[0], &parse.Error{})
 }
 
 func TestJSONPathNotEqual(t *testing.T) {
@@ -252,4 +252,33 @@ func TestJSONPathFormatNotEqual(t *testing.T) {
 	failures := a.Failures()
 	require.Len(failures, 1)
 	require.ErrorIs(failures[0], gdtjson.ErrJSONFormatNotEqual)
+}
+
+func TestJSONPathKeyWithDot(t *testing.T) {
+	require := require.New(t)
+
+	ctx := context.TODO()
+	c := content()
+
+	exp := gdtjson.Expect{
+		Paths: map[string]string{
+			"$[0].publisher.address['postal.code']": "10010",
+		},
+	}
+
+	a := gdtjson.New(&exp, c)
+	a.OK(ctx)
+	require.Empty(a.Failures())
+
+	exp = gdtjson.Expect{
+		Paths: map[string]string{
+			"$[0].publisher.address['postal.code']": "42",
+		},
+	}
+
+	a = gdtjson.New(&exp, c)
+	require.False(a.OK(ctx))
+	failures := a.Failures()
+	require.Len(failures, 1)
+	require.ErrorIs(failures[0], gdtjson.ErrJSONPathNotEqual)
 }

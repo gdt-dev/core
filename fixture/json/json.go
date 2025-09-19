@@ -10,7 +10,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/PaesslerAG/jsonpath"
+	"github.com/theory/jsonpath"
 
 	"github.com/gdt-dev/core/api"
 )
@@ -29,14 +29,12 @@ func (f *jsonFixture) HasState(path string) bool {
 	if f.data == nil {
 		return false
 	}
-	got, err := jsonpath.Get(path, f.data)
+	p, err := jsonpath.Parse(path)
 	if err != nil {
 		return false
 	}
-	if got == nil {
-		return false
-	}
-	return true
+	nodes := p.Select(f.data)
+	return len(nodes) == 1
 }
 
 // GetState returns the value at supplied JSONPath expression or nil if the
@@ -45,10 +43,15 @@ func (f *jsonFixture) State(path string) interface{} {
 	if f.data == nil {
 		return nil
 	}
-	got, err := jsonpath.Get(path, f.data)
+	p, err := jsonpath.Parse(path)
 	if err != nil {
 		return nil
 	}
+	nodes := p.Select(f.data)
+	if len(nodes) == 0 {
+		return nil
+	}
+	got := nodes[0]
 	switch got := got.(type) {
 	case string:
 		return got

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PaesslerAG/jsonpath"
+	"github.com/theory/jsonpath"
 	gjs "github.com/xeipuuv/gojsonschema"
 
 	"github.com/gdt-dev/core/api"
@@ -119,13 +119,19 @@ func (a *assertions) pathsOK() bool {
 		return false
 	}
 	for path, expVal := range a.exp.Paths {
-		got, err := jsonpath.Get(path, v)
+		p, err := jsonpath.Parse(path)
 		if err != nil {
 			// Not terminal because during parse we validate the JSONPath
 			// expression is valid.
 			a.Fail(JSONPathNotFound(path, err))
 			return false
 		}
+		nodes := p.Select(v)
+		if len(nodes) == 0 {
+			a.Fail(JSONPathNotFound(path, err))
+			return false
+		}
+		got := nodes[0]
 		switch got := got.(type) {
 		case string:
 			if expVal != got {
@@ -166,6 +172,7 @@ func (a *assertions) pathsOK() bool {
 			a.Fail(JSONPathConversionError(path, expVal, got))
 			return false
 		}
+
 	}
 	return true
 }
@@ -185,13 +192,19 @@ func (a *assertions) pathFormatsOK() bool {
 		return false
 	}
 	for path, format := range a.exp.PathFormats {
-		got, err := jsonpath.Get(path, v)
+		p, err := jsonpath.Parse(path)
 		if err != nil {
 			// Not terminal because during parse we validate the JSONPath
 			// expression is valid.
 			a.Fail(JSONPathNotFound(path, err))
 			return false
 		}
+		nodes := p.Select(v)
+		if len(nodes) == 0 {
+			a.Fail(JSONPathNotFound(path, err))
+			return false
+		}
+		got := nodes[0]
 		ok, err := isFormatted(format, got)
 		if err != nil {
 			a.Fail(JSONFormatError(format, err))
