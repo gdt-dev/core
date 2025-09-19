@@ -15,8 +15,8 @@
     "address": "153–157 Fifth Avenue",
     "city": "New York City",
     "state": "NY",
-    "postal_code": "10010",
-    "country_code": "US"
+    "postal.code": "10010",
+    "country.code": "US"
   }
 }
 }

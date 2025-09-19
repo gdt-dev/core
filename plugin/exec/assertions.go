@@ -13,6 +13,7 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	gdtcontext "github.com/gdt-dev/core/context"
+	"github.com/gdt-dev/core/debug"
 )
 
 // Expect contains the assertions about an Exec Spec's actions
@@ -76,7 +77,16 @@ func (a *pipeAssertions) OK(ctx context.Context) bool {
 	if a.ContainsAll != nil {
 		vals := a.ContainsAll.Values()
 		vals = lo.Map(vals, func(val string, _ int) string {
-			return gdtcontext.ReplaceVariables(ctx, val)
+			origVal := val
+			val = gdtcontext.ReplaceVariables(ctx, val)
+			if origVal != val {
+				debug.Printf(
+					ctx,
+					"exec.assert.contains: replaced var: %s -> %s",
+					origVal, val,
+				)
+			}
+			return val
 		})
 		for _, find := range vals {
 			if !strings.Contains(contents, find) {
@@ -89,7 +99,16 @@ func (a *pipeAssertions) OK(ctx context.Context) bool {
 		found := false
 		vals := a.ContainsAny.Values()
 		vals = lo.Map(vals, func(val string, _ int) string {
-			return gdtcontext.ReplaceVariables(ctx, val)
+			origVal := val
+			val = gdtcontext.ReplaceVariables(ctx, val)
+			if origVal != val {
+				debug.Printf(
+					ctx,
+					"exec.assert.contains-any: replaced var: %s -> %s",
+					origVal, val,
+				)
+			}
+			return val
 		})
 		for _, find := range vals {
 			if idx := strings.Index(contents, find); idx > -1 {
@@ -105,7 +124,16 @@ func (a *pipeAssertions) OK(ctx context.Context) bool {
 	if a.ContainsNone != nil {
 		vals := a.ContainsNone.Values()
 		vals = lo.Map(vals, func(val string, _ int) string {
-			return gdtcontext.ReplaceVariables(ctx, val)
+			origVal := val
+			val = gdtcontext.ReplaceVariables(ctx, val)
+			if origVal != val {
+				debug.Printf(
+					ctx,
+					"exec.assert.contains-none: replaced var: %s -> %s",
+					origVal, val,
+				)
+			}
+			return val
 		})
 		for _, find := range vals {
 			if strings.Contains(contents, find) {

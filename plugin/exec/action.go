@@ -62,9 +62,28 @@ func (a *Action) Do(
 		args = []string{"-c", a.Exec}
 	}
 
+	origTarget := target
 	target = gdtcontext.ReplaceVariables(ctx, target)
+	if target != origTarget {
+		if origTarget != target {
+			debug.Printf(
+				ctx,
+				"exec: replaced target: %s -> %s",
+				origTarget, target,
+			)
+		}
+	}
 	args = lo.Map(args, func(arg string, _ int) string {
-		return gdtcontext.ReplaceVariables(ctx, arg)
+		origArg := arg
+		arg = gdtcontext.ReplaceVariables(ctx, arg)
+		if origArg != arg {
+			debug.Printf(
+				ctx,
+				"exec: replaced arg: %s -> %s",
+				origArg, arg,
+			)
+		}
+		return arg
 	})
 
 	debug.Printf(ctx, "exec: %s %s", target, args)

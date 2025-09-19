@@ -76,7 +76,7 @@ func (e *Error) SetContents() {
 			}
 			_, _ = fmt.Fprintf(b, "%03d: %s\n", x, line)
 			if x == e.Line {
-				_, _ = fmt.Fprintf(b, "  %s^", strings.Repeat(" ", e.Column))
+				_, _ = fmt.Fprintf(b, "  %s^\n", strings.Repeat(" ", e.Column))
 			}
 		}
 		if err := sc.Err(); err != nil {

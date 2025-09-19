@@ -53,6 +53,9 @@ var (
 // JSONPathNotFound returns an ErrFailure when a JSONPath expression could not
 // evaluate to a found element.
 func JSONPathNotFound(path string, err error) error {
+	if err == nil {
+		return fmt.Errorf("%w: %s", ErrJSONPathNotFound, path)
+	}
 	return fmt.Errorf("%w: %s: %s", ErrJSONPathNotFound, path, err)
 }
 

@@ -11,16 +11,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/PaesslerAG/jsonpath"
+	"github.com/theory/jsonpath"
 	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/parse"
-)
-
-var (
-	// defining the JSONPath language here allows us to disaggregate parse
-	// errors from runtime errors when evaluating a JSONPath expression.
-	lang = jsonpath.Language()
 )
 
 // UnsupportedJSONSchemaReference returns ErrUnsupportedJSONSchemaReference for
@@ -143,7 +137,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 				if len(path) == 0 || path[0] != '$' {
 					return JSONPathInvalidNoRoot(path, valNode)
 				}
-				if _, err := lang.NewEvaluable(path); err != nil {
+				if _, err := jsonpath.Parse(path); err != nil {
 					return JSONPathInvalid(path, err, valNode)
 				}
 			}
@@ -160,7 +154,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 				if len(pathFormat) == 0 || pathFormat[0] != '$' {
 					return JSONPathInvalidNoRoot(pathFormat, valNode)
 				}
-				if _, err := lang.NewEvaluable(pathFormat); err != nil {
+				if _, err := jsonpath.Parse(pathFormat); err != nil {
 					return JSONPathInvalid(pathFormat, err, valNode)
 				}
 			}
