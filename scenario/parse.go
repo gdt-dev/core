@@ -48,6 +48,15 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 				return parse.ExpectedScalarAt(valNode)
 			}
 			s.Description = valNode.Value
+		case "depends", "depends-on":
+			if valNode.Kind != yaml.SequenceNode {
+				return parse.ExpectedSequenceAt(valNode)
+			}
+			var deps []*api.Dependency
+			if err := valNode.Decode(&deps); err != nil {
+				return parse.ExpectedSequenceAt(valNode)
+			}
+			s.Depends = deps
 		case "fixtures":
 			if valNode.Kind != yaml.SequenceNode {
 				return parse.ExpectedSequenceAt(valNode)

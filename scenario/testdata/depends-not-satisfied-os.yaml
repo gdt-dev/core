@@ -1,0 +1,9 @@
+name: depends-not-satisfied-os
+description: a scenario with unsatisfiable OS-specific dependencies
+depends:
+  - name: nonexistingbinary
+    when:
+      os: windows
+tests:
+  - name: should-not-get-here-on-windows
+    foo: baz

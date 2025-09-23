@@ -43,6 +43,9 @@ func (s *Scenario) Run(ctx context.Context, subject any) error {
 			_ = os.Chdir(cwd)
 		}()
 	}
+	if err := s.checkDependencies(ctx); err != nil {
+		return err
+	}
 	switch subject := subject.(type) {
 	case *testing.T:
 		return s.runGo(ctx, subject)

@@ -7,6 +7,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -120,6 +121,12 @@ var (
 		"%w: required fixture missing",
 		RuntimeError,
 	)
+	// ErrDependencyNotSatisfied is returned when a required fixture has not
+	// been registered with the context.
+	ErrDependencyNotSatisfied = fmt.Errorf(
+		"%w: dependency not satisfied",
+		RuntimeError,
+	)
 	// ErrTimeoutConflict is returned when the Go test tool's timeout conflicts
 	// with either a total wait time or a timeout in a scenario or test spec
 	ErrTimeoutConflict = fmt.Errorf(
@@ -127,6 +134,24 @@ var (
 		RuntimeError,
 	)
 )
+
+// DependencyNotSatified returns an ErrDependencyNotSatisfied with the supplied
+// dependency name and optional constraints.
+func DependencyNotSatisfied(dep *Dependency) error {
+	constraintsStr := ""
+	constraints := []string{}
+	progName := dep.Name
+	if dep.When != nil {
+		if dep.When.OS != "" {
+			constraints = append(constraints, "OS:"+dep.When.OS)
+		}
+		if dep.When.Version != "" {
+			constraints = append(constraints, "VERSION:"+dep.When.Version)
+		}
+		constraintsStr = fmt.Sprintf(" (%s)", strings.Join(constraints, ","))
+	}
+	return fmt.Errorf("%w: %s%s", ErrDependencyNotSatisfied, progName, constraintsStr)
+}
 
 // RequiredFixtureMissing returns an ErrRequiredFixture with the supplied
 // fixture name

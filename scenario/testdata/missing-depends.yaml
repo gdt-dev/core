@@ -1,0 +1,7 @@
+name: missing-depends
+description: a scenario with unsatisfiable dependencies
+depends:
+  - name: nonexistingbinary
+tests:
+  - name: should-not-get-here
+    foo: bar
