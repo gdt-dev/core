@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/gdt-dev/core/api"
@@ -72,6 +73,46 @@ func TestMissingFixtures(t *testing.T) {
 	assert.NotNil(err)
 	assert.ErrorIs(err, api.ErrRequiredFixture)
 	assert.ErrorIs(err, api.RuntimeError)
+}
+
+func TestMissingDepends(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	fp := filepath.Join("testdata", "missing-depends.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	err = s.Run(context.TODO(), t)
+	assert.NotNil(err)
+	assert.ErrorIs(err, api.ErrDependencyNotSatisfied)
+	assert.ErrorIs(err, api.RuntimeError)
+}
+
+func TestDependsNotSatisfiedOS(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	fp := filepath.Join("testdata", "depends-not-satisfied-os.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	err = s.Run(context.TODO(), t)
+	if runtime.GOOS == "windows" {
+		assert.NotNil(err)
+		assert.ErrorIs(err, api.ErrDependencyNotSatisfied)
+		assert.ErrorIs(err, api.RuntimeError)
+	} else {
+		assert.Nil(err)
+	}
 }
 
 func TestTimeoutConflictTotalWait(t *testing.T) {

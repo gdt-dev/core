@@ -15,6 +15,9 @@ import (
 type Scenario struct {
 	// Timings is the collection of max wait/timeout values for the scenario.
 	Timings *api.Timings `yaml:"-"`
+	// Depends contains all prerequisite dependencies required to execute the
+	// test scenario.
+	Depends []*api.Dependency `yaml:"depends,omitempty"`
 	// Path is the filepath to the test scenario YAML file.
 	Path string `yaml:"-"`
 	// Name is the short name for the test case. If empty, defaults to the base
