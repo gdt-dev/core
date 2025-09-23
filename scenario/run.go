@@ -104,7 +104,7 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		}
 	}
 
-	var err error
+	var runErr error
 
 	scenCleanups := []func(){}
 	scenOK := true
@@ -122,6 +122,7 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		ctx = gdtcontext.SetTestUnit(ctx, tu)
 		res, err := s.runSpec(ctx, tu, idx)
 		if err != nil {
+			runErr = err
 			break
 		}
 
@@ -146,7 +147,7 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 			cleanup()
 		}
 	}
-	return err
+	return runErr
 }
 
 // runGo executes the scenario using the `go test` tool as the underlying test
