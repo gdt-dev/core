@@ -25,6 +25,18 @@ All `gdt` scenarios have the following fields:
 * `defaults`: (optional) is a map of default options and configuration values
 * `fixtures`: (optional) list of strings indicating named fixtures that will be
   started before any of the tests in the file are run
+* `depends`: (optional) list of [`Dependency`][dependency] objects that
+  describe a program or package that should be available in the host's `PATH`
+  that the test scenario depends on.
+* `depends.name`: string name of the program or package the test scenario
+  depends on.
+* `depends.when`: (optional) object describing any constraints/conditions that
+  should apply to the evaluation of the dependency.
+* `depends.when.os`: (optional) string operating system. if set, the dependency
+  is only checked for that OS.
+* `depends.when.version`: (optional) string version constraint. if set, the
+  program or package must be available on the host `PATH` and must satisfy the
+  version constraint.
 * `skip-if`: (optional) list of [`Spec`][basespec] specializations that will be
   evaluated *before* running any test in the scenario. If any of these
   conditions evaluates successfully, the test scenario will be skipped.
@@ -32,6 +44,7 @@ All `gdt` scenarios have the following fields:
   runnable test units in the test scenario.
 
 [basespec]: https://github.com/gdt-dev/core/blob/ecee17249e1fa10147cf9191be0358923da44094/types/spec.go#L30
+[dependency]: https://github.com/gdt-dev/core/blob/e83cb2bcac4fbb73205c58851b22a8b0a6cc51b5/api/dependency.go
 
 The scenario's `tests` field is the most important and the [`Spec`][basespec]
 objects that it contains are the meat of a test scenario.
@@ -159,6 +172,78 @@ test spec also contains these fields:
 
 [execspec]: https://github.com/gdt-dev/core/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/exec/spec.go#L11-L34
 [pipeexpect]: https://github.com/gdt-dev/core/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/exec/assertions.go#L15-L26
+
+### Marking a program or package dependency for a test scenario
+
+Often when creating `gdt` test scenarios, you will want to declare that the
+scenario requires a particular application be available in the host's `PATH`.
+
+Use the `depends` field to tell `gdt` about these requirements:
+
+```yaml
+name: scenario requiring `myapp` binary be available to execute
+
+depends:
+ - name: myapp
+
+tests:
+ - name: start-myapp
+   exec: myapp start
+```
+
+Running the above test scenario when `myapp` is not available to execute
+results in a runtime error:
+
+```
+$ gdt run myapp.yaml
+Error: runtime error: dependency not satisfied: myapp
+```
+
+You can specify that a dependency only be applicable on a specific operating
+system using the `depends.when.os` field:
+
+```yaml
+name: scenario requiring `myapp` binary be available to execute
+
+depends:
+ - name: myapp
+   when:
+     os: linux
+
+tests:
+ - name: start-myapp
+   exec: myapp start
+```
+
+Running the above scenario on Linux yields the same runtime error:
+
+```
+$ gdt run myapp.yaml
+Error: runtime error: dependency not satisfied: myapp (OS:linux)
+```
+
+However changing the `depends.when.os` to `windows`:
+
+```yaml
+name: scenario requiring `myapp` binary be available to execute
+
+depends:
+ - name: myapp
+   when:
+     os: windows
+
+tests:
+ - name: start-myapp
+   exec: myapp start
+```
+
+Running the scenario will show a different runtime error that is dependent on
+the operating system:
+
+```
+$ gdt run myapp.yaml
+Error: runtime error: exec: "myapp": executable file not found in $PATH
+```
 
 ### Passing variables to subsequent test specs
 
