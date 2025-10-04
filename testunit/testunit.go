@@ -48,7 +48,7 @@ type TestUnit struct {
 	elapsed time.Duration
 }
 
-func (u *TestUnit) finish() {
+func (u *TestUnit) Finish() {
 	u.Lock()
 	u.elapsed += time.Since(u.started)
 	u.done = true
@@ -100,7 +100,7 @@ func (u *TestUnit) Failed() bool {
 // Execution will continue at the next test unit.
 func (u *TestUnit) FailNow() {
 	u.Fail()
-	u.finish()
+	u.Finish()
 }
 
 func (u *TestUnit) log(s string) {
@@ -181,7 +181,7 @@ func (u *TestUnit) SkipNow() {
 	u.Lock()
 	defer u.RUnlock()
 	u.skipped = true
-	u.finish()
+	u.Finish()
 }
 
 // Skipped reports whether the test was skipped.
