@@ -136,6 +136,8 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		}
 		if len(res.Failures()) > 0 {
 			tu.FailNow()
+		} else {
+			tu.Finish() // necessary for elapsed timer to stop
 		}
 		scenOK = scenOK && !tu.Failed()
 
