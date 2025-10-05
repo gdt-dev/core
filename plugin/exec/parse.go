@@ -123,6 +123,16 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 				return err
 			}
 			s.Assert = e
+		case "require":
+			if valNode.Kind != yaml.MappingNode {
+				return parse.ExpectedMapAt(valNode)
+			}
+			var e *Expect
+			if err := valNode.Decode(&e); err != nil {
+				return err
+			}
+			e.Require = true
+			s.Assert = e
 		case "on":
 			if valNode.Kind != yaml.MappingNode {
 				return parse.ExpectedMapAt(valNode)
@@ -168,6 +178,16 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
+		case "require", "stop-on-fail", "stop_on_fail", "stop.on.fail",
+			"fail-stop", "fail.stop", "fail_stop":
+			if valNode.Kind != yaml.ScalarNode {
+				return parse.ExpectedScalarAt(valNode)
+			}
+			req, err := strconv.ParseBool(valNode.Value)
+			if err != nil {
+				return parse.ExpectedBoolAt(valNode)
+			}
+			e.Require = req
 		case "exit_code", "exit-code":
 			if valNode.Kind != yaml.ScalarNode {
 				return parse.ExpectedScalarAt(valNode)

@@ -108,6 +108,7 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 
 	scenCleanups := []func(){}
 	scenOK := true
+outer:
 	for idx, t := range s.Tests {
 		tu := testunit.New(
 			ctx,
@@ -134,11 +135,15 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		if res.HasData() {
 			ctx = gdtcontext.SetRun(ctx, res.Data())
 		}
-		if len(res.Failures()) > 0 {
-			tu.FailNow()
-		} else {
-			tu.Finish() // necessary for elapsed timer to stop
+		for _, fail := range res.Failures() {
+			if res.StopOnFail() {
+				tu.Fatal(fail)
+				run.StoreResult(idx, s.Path, tu, res)
+				break outer
+			}
+			tu.Error(fail)
 		}
+		tu.Finish() // necessary for elapsed timer to stop
 		scenOK = scenOK && !tu.Failed()
 
 		run.StoreResult(idx, s.Path, tu, res)
@@ -220,7 +225,10 @@ func (s *Scenario) runGo(ctx context.Context, t *testing.T) error {
 			}
 
 			for _, fail := range res.Failures() {
-				tt.Fatal(fail)
+				if res.StopOnFail() {
+					tt.Fatal(fail)
+				}
+				tt.Error(fail)
 			}
 		}
 	})

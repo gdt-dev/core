@@ -16,6 +16,9 @@ package api
 // returned in the Result and the `Scenario.Run` method injects that
 // information into the context that is supplied to the next Spec's `Run`.
 type Result struct {
+	// stopOnFail is an indication to the scenario that if there are any
+	// failures, the scenario should not proceed with test execution.
+	stopOnFail bool
 	// failures is the collection of error messages from assertion failures
 	// that occurred during Eval(). These are *not* `gdterrors.RuntimeError`.
 	failures []error
@@ -37,6 +40,12 @@ func (r *Result) HasData() bool {
 // Data returns the raw run data saved in the result
 func (r *Result) Data() map[string]any {
 	return r.data
+}
+
+// StopOnFail returns true if the test spec indicates that a failure of
+// assertion should stop the execution of the test scenario.
+func (r *Result) StopOnFail() bool {
+	return r.stopOnFail
 }
 
 // Failed returns true if any assertion failed during Eval(), false otherwise.
@@ -92,6 +101,14 @@ type ResultModifier func(*Result)
 func WithData(key string, val any) ResultModifier {
 	return func(r *Result) {
 		r.SetData(key, val)
+	}
+}
+
+// WithStopOnFail sets the stopOnFail value for the test spec result.
+// failures
+func WithStopOnFail(val bool) ResultModifier {
+	return func(r *Result) {
+		r.stopOnFail = val
 	}
 }
 

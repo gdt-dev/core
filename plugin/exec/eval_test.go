@@ -463,3 +463,47 @@ func TestVar(t *testing.T) {
 	err = s.Run(ctx, t)
 	require.Nil(err)
 }
+
+func TestFailStopOnFail(t *testing.T) {
+	if !*failFlag {
+		t.Skip("skipping without -fail flag")
+	}
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "stop-on-fail.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(
+		f,
+		scenario.WithPath(fp),
+	)
+	require.Nil(err)
+	require.NotNil(s)
+
+	ctx := gdtcontext.New(gdtcontext.WithDebug())
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
+func TestStopOnFail(t *testing.T) {
+	require := require.New(t)
+	target := os.Args[0]
+	failArgs := []string{
+		"-test.v",
+		"-test.run=FailStopOnFail",
+		"-fail",
+	}
+	outerr, err := exec.Command(target, failArgs...).CombinedOutput()
+
+	// The test should have failed...
+	require.NotNil(err)
+
+	debugout := string(outerr)
+	require.Contains(debugout, "assertion failed: not in: expected stdout to contain 1234")
+	// first test spec does not contain the `require: true` field and so the
+	// second test spec should execute (and fail its assertion)
+	require.Contains(debugout, "assertion failed: not in: expected stdout to contain 24")
+	// The third test spec should NOT have been executed...
+	require.NotContains(debugout, "[gdt] [stop-on-fail/2] exec: stdout: 24")
+}
