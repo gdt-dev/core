@@ -18,6 +18,9 @@ import (
 
 // Expect contains the assertions about an Exec Spec's actions
 type Expect struct {
+	// Require indicates that any failed assertion should stop the execution of
+	// the test scenario in which the test spec is contained.
+	Require bool `yaml:"require,omitempty"`
 	// ExitCode is the expected exit code for the executed command. The default
 	// (0) is the universal successful exit code, so you only need to set this
 	// if you expect a non-successful result from executing the command.

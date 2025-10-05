@@ -1,0 +1,17 @@
+name: stop-on-fail
+description: |
+    a scenario that tests that a failed assertion for a stop-on-fail
+    test spec prevents subsequent test specs from being executed.
+tests:
+  - exec: echo "meaning of life"
+    assert:
+      out:
+        is: 1234
+  # This test should be executed because we do not use the require: true.
+  - exec: echo 42
+    assert:
+      require: true
+      out:
+        is: 24
+  # This test should not be executed because of the use of require: true above
+  - exec: echo 24

@@ -47,5 +47,12 @@ func (s *Spec) Eval(
 			}
 		}
 	}
-	return api.NewResult(api.WithFailures(a.Failures()...)), nil
+	stopOnFail := false
+	if s.Assert != nil {
+		stopOnFail = s.Assert.Require
+	}
+	return api.NewResult(
+		api.WithStopOnFail(stopOnFail),
+		api.WithFailures(a.Failures()...),
+	), nil
 }

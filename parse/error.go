@@ -179,6 +179,16 @@ func ExpectedScalarOrMapAt(node *yaml.Node) error {
 	}
 }
 
+// ExpectedBoolAt returns a parse error indicating a boolean value was expected
+// and annotated with the line/column of the supplied YAML node.
+func ExpectedBoolAt(node *yaml.Node) error {
+	return &Error{
+		Line:    node.Line,
+		Column:  node.Column,
+		Message: "expected boolean value",
+	}
+}
+
 // ExpectedTimeoutAt returns an ErrExpectedTimeout error annotated
 // with the line/column of the supplied YAML node.
 func ExpectedTimeoutAt(node *yaml.Node) error {

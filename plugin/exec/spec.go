@@ -13,6 +13,10 @@ import (
 type Spec struct {
 	api.Spec
 	Action
+	// Require is an object containing the conditions that the Spec will
+	// assert. If any condition fails, the test scenario execution will stop
+	// and be marked as failed.
+	Require *Expect `yaml:"require,omitempty"`
 	// Assert is an object containing the conditions that the Spec will assert.
 	Assert *Expect `yaml:"assert,omitempty"`
 	// On is an object containing actions to take upon certain conditions.

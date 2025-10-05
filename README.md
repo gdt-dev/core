@@ -146,6 +146,10 @@ test spec also contains these fields:
   the name of the environment variable to read into the named variable.
 * `assert`: (optional) an object describing the conditions that will be
   asserted about the test action.
+* `assert.require`: (optional) a boolean indicating whether a failed assertion
+  will cause the test scenario's execution to stop. The default behaviour of
+  `gdt` is to continue execution of subsequent test specs in a test scenario when
+  an assertion fails.
 * `assert.exit-code`: (optional) an integer with the expected exit code from the
   executed command. The default successful exit code is 0 and therefore you do
   not need to specify this if you expect a successful exit code.
