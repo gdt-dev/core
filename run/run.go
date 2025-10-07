@@ -21,9 +21,9 @@ type Run struct {
 
 // OK returns true if all Scenarios in the Run had all successful test units.
 func (r *Run) OK() bool {
-	return !lo.SomeBy(lo.Values(r.scenarioResults), func(results []TestUnitResult) bool {
-		return !lo.SomeBy(results, func(r TestUnitResult) bool {
-			return len(r.failures) == 0
+	return lo.EveryBy(lo.Values(r.scenarioResults), func(results []TestUnitResult) bool {
+		return lo.EveryBy(results, func(tur TestUnitResult) bool {
+			return tur.OK()
 		})
 	})
 }
