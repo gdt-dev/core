@@ -104,8 +104,6 @@ func (s *Scenario) runExternal(ctx context.Context, run *run.Run) error {
 		}
 	}
 
-	var runErr error
-
 	scenCleanups := []func(){}
 	scenOK := true
 outer:
@@ -123,8 +121,7 @@ outer:
 		ctx = gdtcontext.SetTestUnit(ctx, tu)
 		res, err := s.runSpec(ctx, tu, idx)
 		if err != nil {
-			runErr = err
-			break
+			return err
 		}
 
 		scenCleanups = append(scenCleanups, res.Cleanups()...)
@@ -154,7 +151,7 @@ outer:
 			cleanup()
 		}
 	}
-	return runErr
+	return nil
 }
 
 // runGo executes the scenario using the `go test` tool as the underlying test
@@ -286,7 +283,13 @@ func (s *Scenario) runSpec(
 
 	select {
 	case <-specCtx.Done():
-		t.Fatalf("assertion failed: timeout exceeded (%s)", to.After)
+		fail := fmt.Errorf(
+			"assertion failed: timeout exceeded (%s)", to.After,
+		)
+		res = api.NewResult(
+			api.WithFailures(fail),
+		)
+		err = nil
 	case runres := <-ch:
 		res = runres.r
 		err = runres.err
