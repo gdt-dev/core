@@ -133,6 +133,15 @@ var (
 		"%w: timeout conflict",
 		RuntimeError,
 	)
+	// ErrJSONPathVarFromNotMatched is returned when the `var.$VAR.from`
+	// JSONPath expression fails to match some output results. This is a
+	// runtime error because we cannot continue execution after failing to
+	// populate the value of a variable that subsequent test specifications may
+	// depend on.
+	ErrJSONPathVarFromNotMatched = fmt.Errorf(
+		"%w: var.from JSONPath not matched",
+		RuntimeError,
+	)
 )
 
 // DependencyNotSatified returns an ErrDependencyNotSatisfied with the supplied
@@ -192,4 +201,19 @@ func TimeoutConflict(
 		}
 	}
 	return fmt.Errorf("%w: %s", ErrTimeoutConflict, msg)
+}
+
+// JSONPathVarFromNotMatched returns a RuntimeError indicating that a variable
+// could not be populated due to a failure to match the variable's from
+// JSONPath to expected output. This is a RuntimeError because subsequent test
+// specifications may depend on the variable having been populated.
+func JSONPathVarFromNotMatched(
+	varName string,
+	path string,
+) error {
+	return fmt.Errorf(
+		"%w: variable %s could not be filled because "+
+			"JSONPath expression %s did not match output",
+		ErrJSONPathVarFromNotMatched, varName, path,
+	)
 }
