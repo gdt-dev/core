@@ -5,8 +5,6 @@
 package exec
 
 import (
-	"gopkg.in/yaml.v3"
-
 	"github.com/gdt-dev/core/api"
 	gdtplugin "github.com/gdt-dev/core/plugin"
 )
@@ -44,7 +42,7 @@ func (p *plugin) Info() api.PluginInfo {
 	}
 }
 
-func (p *plugin) Defaults() yaml.Unmarshaler {
+func (p *plugin) Defaults() api.DefaultsHandler {
 	return &Defaults{}
 }
 

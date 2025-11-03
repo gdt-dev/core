@@ -81,6 +81,10 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 				if err := valNode.Decode(plugDefaults); err != nil {
 					return err
 				}
+				// The user may have used scenario.WithDefaults() so we need to
+				// merge anything we got from WithDefaults with anything we
+				// parsed from the plugins.
+				plugDefaults.Merge(s.Defaults)
 				defaults[p.Info().Name] = plugDefaults
 			}
 			// The scenario may have its own defaults as well, so we stash

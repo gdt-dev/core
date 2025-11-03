@@ -18,6 +18,8 @@ type fooDefaults struct {
 	Foo string `yaml:"foo"`
 }
 
+func (d *fooDefaults) Merge(map[string]any) {}
+
 func (d *fooDefaults) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
@@ -59,7 +61,7 @@ func (p *fooPlugin) Info() api.PluginInfo {
 	}
 }
 
-func (p *fooPlugin) Defaults() yaml.Unmarshaler {
+func (p *fooPlugin) Defaults() api.DefaultsHandler {
 	return &fooDefaults{}
 }
 
