@@ -33,6 +33,8 @@ type Defaults struct {
 	InnerDefaults `yaml:",inline"`
 }
 
+func (d *Defaults) Merge(map[string]any) {}
+
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
 		return parse.ExpectedMapAt(node)
@@ -136,7 +138,7 @@ func (p *Plugin) Info() api.PluginInfo {
 	}
 }
 
-func (p *Plugin) Defaults() yaml.Unmarshaler {
+func (p *Plugin) Defaults() api.DefaultsHandler {
 	return &Defaults{}
 }
 

@@ -16,6 +16,13 @@ type Defaults struct {
 	execDefaults
 }
 
+// Merge merges the supplies map of key/value combinations with the set of
+// handled defaults for the plugin. The supplied key/value map will NOT be
+// unpacked from its top-most plugin named element. So, for example, the
+// kube plugin should expect to get a map that looks like
+// "kube:namespace:<namespace>" and not "namespace:<namespace>".
+func (d *Defaults) Merge(map[string]any) {}
+
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
 		return parse.ExpectedMapAt(node)

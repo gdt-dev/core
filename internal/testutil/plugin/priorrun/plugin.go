@@ -24,6 +24,8 @@ const PriorRunDataKey = "priorrun"
 
 type Defaults struct{}
 
+func (d *Defaults) Merge(map[string]any) {}
+
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
@@ -116,7 +118,7 @@ func (p *Plugin) Info() api.PluginInfo {
 	}
 }
 
-func (p *Plugin) Defaults() yaml.Unmarshaler {
+func (p *Plugin) Defaults() api.DefaultsHandler {
 	return &Defaults{}
 }
 
