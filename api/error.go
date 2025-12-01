@@ -147,19 +147,29 @@ var (
 // DependencyNotSatified returns an ErrDependencyNotSatisfied with the supplied
 // dependency name and optional constraints.
 func DependencyNotSatisfied(dep *Dependency) error {
-	constraintsStr := ""
-	constraints := []string{}
+	conditionsStr := ""
+	conditions := []string{}
 	progName := dep.Name
 	if dep.When != nil {
 		if dep.When.OS != "" {
-			constraints = append(constraints, "OS:"+dep.When.OS)
+			conditions = append(conditions, "OS:"+dep.When.OS)
 		}
-		if dep.When.Version != "" {
-			constraints = append(constraints, "VERSION:"+dep.When.Version)
-		}
-		constraintsStr = fmt.Sprintf(" (%s)", strings.Join(constraints, ","))
 	}
-	return fmt.Errorf("%w: %s%s", ErrDependencyNotSatisfied, progName, constraintsStr)
+	conditionsStr = fmt.Sprintf(" (%s)", strings.Join(conditions, ","))
+	return fmt.Errorf("%w: %s%s", ErrDependencyNotSatisfied, progName, conditionsStr)
+}
+
+// DependencyNotSatifiedVersionConstraint returns an ErrDependencyNotSatisfied with the supplied
+// dependency name and version constraint failure.
+func DependencyNotSatisfiedVersionConstraint(
+	dep *Dependency,
+	constraintStr string,
+) error {
+	progName := dep.Name
+	return fmt.Errorf(
+		"%w: %q failed version constraint %q",
+		ErrDependencyNotSatisfied, progName, constraintStr,
+	)
 }
 
 // RequiredFixtureMissing returns an ErrRequiredFixture with the supplied

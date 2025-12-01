@@ -26,17 +26,26 @@ All `gdt` scenarios have the following fields:
 * `fixtures`: (optional) list of strings indicating named fixtures that will be
   started before any of the tests in the file are run
 * `depends`: (optional) list of [`Dependency`][dependency] objects that
-  describe a program or package that should be available in the host's `PATH`
+  describe a program binary that should be available in the host's `PATH`
   that the test scenario depends on.
-* `depends.name`: string name of the program or package the test scenario
-  depends on.
+* `depends.name`: string name of the program the test scenario depends on.
 * `depends.when`: (optional) object describing any constraints/conditions that
   should apply to the evaluation of the dependency.
 * `depends.when.os`: (optional) string operating system. if set, the dependency
   is only checked for that OS.
-* `depends.when.version`: (optional) string version constraint. if set, the
+* `depends.version`: (optional) struct containing version constraint and
+  selector instructions.
+* `depends.version.constraint`: optional string version constraint. if set, the
   program or package must be available on the host `PATH` and must satisfy the
   version constraint.
+* `depends.version.selector`: (optional) struct containing selector
+  instructions for gdt to determine the version of a dependent binary.
+* `depends.version.selector.args`: (optional) set of string arguments to call
+  the dependency binary with in order to get the program's version information.
+  If empty, we default to []string{`-v`}.
+* `depends.version.selector.filter`: (optional) regular expression to run
+  against the returned output from executing the dependency binary with the
+  `selector.args` arguments. If empty, we use a loose semver matching regex.
 * `skip-if`: (optional) list of [`Spec`][basespec] specializations that will be
   evaluated *before* running any test in the scenario. If any of these
   conditions evaluates successfully, the test scenario will be skipped.
@@ -248,6 +257,54 @@ the operating system:
 $ gdt run myapp.yaml
 Error: runtime error: exec: "myapp": executable file not found in $PATH
 ```
+
+You may also specify a particular version constraint that must pass for a
+dependent binary with the `depends.version.constraint` field. For example,
+let's assume I want to declare my test scenario requires that at least version
+`1.2.3` of `myapp` must be present on the host machine, I would do this:
+
+```yaml
+depends:
+ - name: myapp
+   version:
+     constraint: ">=1.2.3"
+```
+
+The `depends.version.constraint` field should be a valid Semantic Versioning
+constraint. Read more about [Semantic Version constraints][semver-constraints].
+
+By default to determine a binary's version, we pass a `-v` flag to the binary
+itself. If you know that a binary uses a different way of returning its version
+information, you can use the `depends.version.selector.args` field. As an
+example, the `ls` command line utility on Linux returns its version information
+when you pass the `--version` CLI flag, as shown here:
+
+```
+> ls --version
+ls (GNU coreutils) 9.4
+Copyright (C) 2023 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Richard M. Stallman and David MacKenzie.
+```
+
+If you wanted to require that, say, version 9.1 and later of the `ls`
+command-line utility was present on the host machine, you would do the
+following:
+
+```yaml
+depends:
+ - name: ls
+   version:
+     constraint: ">=9.1"
+     selector:
+       args:
+        - "--version"
+```
+
+[semver-constraints]: https://github.com/Masterminds/semver/blob/master/README.md#checking-version-constraints
 
 ### Passing variables to subsequent test specs
 

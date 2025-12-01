@@ -54,7 +54,7 @@ func (s *Scenario) UnmarshalYAML(node *yaml.Node) error {
 			}
 			var deps []*api.Dependency
 			if err := valNode.Decode(&deps); err != nil {
-				return parse.ExpectedSequenceAt(valNode)
+				return err
 			}
 			s.Depends = deps
 		case "fixtures":

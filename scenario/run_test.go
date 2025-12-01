@@ -115,6 +115,27 @@ func TestDependsNotSatisfiedOS(t *testing.T) {
 	}
 }
 
+func TestDependsNotSatisfiedVersionConstraint(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("skipping non-linux host")
+	}
+	require := require.New(t)
+	assert := assert.New(t)
+
+	fp := filepath.Join("testdata", "depends-not-satisfied-version-constraint.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	err = s.Run(context.TODO(), t)
+	assert.NotNil(err)
+	assert.ErrorIs(err, api.ErrDependencyNotSatisfied)
+	assert.ErrorIs(err, api.RuntimeError)
+}
+
 func TestTimeoutConflictTotalWait(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
