@@ -3,6 +3,7 @@ module github.com/gdt-dev/core
 go 1.24.3
 
 require (
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0

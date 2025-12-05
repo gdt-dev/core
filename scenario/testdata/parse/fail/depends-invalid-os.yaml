@@ -1,0 +1,9 @@
+name: depends-invalid-os
+description: a scenario with invalid OS specified in dependencies
+depends:
+  - name: ls
+    when:
+      os: nonexisting
+tests:
+  - name: should-not-get-here
+    foo: baz

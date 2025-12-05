@@ -1,0 +1,10 @@
+name: depends-version-filter-invalid-regex
+description: a scenario with invalid regular expression specified in dependencies version selector filter
+depends:
+  - name: ls
+    version:
+      selector:
+        filter: t%a)invalidregex
+tests:
+  - name: should-not-get-here
+    foo: baz

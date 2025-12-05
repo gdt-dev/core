@@ -237,3 +237,55 @@ func FileNotFoundAt(path string, node *yaml.Node) error {
 		Message: fmt.Sprintf("file not found: %q", path),
 	}
 }
+
+// InvalidOSAt returns an error indicating an invalid operating system was
+// specified, annotated with the line/column of the supplied YAML node.
+func InvalidOSAt(
+	node *yaml.Node,
+	os string,
+	valid []string,
+) error {
+	return &Error{
+		Line:   node.Line,
+		Column: node.Column,
+		Message: fmt.Sprintf(
+			"invalid OS specified: %s. valid values are %v",
+			os, valid,
+		),
+	}
+}
+
+// InvalidVersionConstraint returns an error indicating an invalid version
+// constraint was specified, annotated with the line/column of the supplied
+// YAML node.
+func InvalidVersionConstraintAt(
+	node *yaml.Node,
+	constraint string,
+	err error,
+) error {
+	return &Error{
+		Line:   node.Line,
+		Column: node.Column,
+		Message: fmt.Sprintf(
+			"invalid version constraint specified: %s: %s",
+			constraint, err,
+		),
+	}
+}
+
+// InvalidRegex returns an error indicating an invalid regular expression was
+// specified, annotated with the line/column of the supplied YAML node.
+func InvalidRegexAt(
+	node *yaml.Node,
+	re string,
+	err error,
+) error {
+	return &Error{
+		Line:   node.Line,
+		Column: node.Column,
+		Message: fmt.Sprintf(
+			"invalid regular expression specified: %s: %s",
+			re, err,
+		),
+	}
+}

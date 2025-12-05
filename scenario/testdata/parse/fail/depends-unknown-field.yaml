@@ -1,0 +1,10 @@
+name: depends-unknown-field
+description: a scenario with unknown field specified for depends
+depends:
+  - name: ls
+    version:
+      # This isn't correct. It should be version.selector.filter...
+      filter: t%a)invalidregex
+tests:
+  - name: should-not-get-here
+    foo: baz

@@ -22,7 +22,6 @@ import (
 )
 
 func TestFailingDefaults(t *testing.T) {
-	assert := assert.New(t)
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-defaults.yaml")
@@ -30,9 +29,61 @@ func TestFailingDefaults(t *testing.T) {
 	require.Nil(err)
 
 	s, err := scenario.FromReader(f, scenario.WithPath(fp))
-	assert.NotNil(err)
-	assert.ErrorContains(err, "defaults parsing failed")
-	assert.Nil(s)
+	require.NotNil(err)
+	require.ErrorContains(err, "defaults parsing failed")
+	require.Nil(s)
+}
+
+func TestFailingDependsUnknownField(t *testing.T) {
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "depends-unknown-field.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.NotNil(err)
+	require.ErrorContains(err, "unknown field")
+	require.Nil(s)
+}
+
+func TestFailingDependsInvalidOS(t *testing.T) {
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "depends-invalid-os.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.NotNil(err)
+	require.ErrorContains(err, "invalid OS specified")
+	require.Nil(s)
+}
+
+func TestFailingDependsVersionInvalidConstraint(t *testing.T) {
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "depends-version-invalid-constraint.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.NotNil(err)
+	require.ErrorContains(err, "invalid version constraint specified")
+	require.Nil(s)
+}
+
+func TestFailingDependsVersionFilterInvalidRegex(t *testing.T) {
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "depends-version-filter-invalid-regex.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.NotNil(err)
+	require.ErrorContains(err, "invalid regular expression specified")
+	require.Nil(s)
 }
 
 func TestNoTests(t *testing.T) {
