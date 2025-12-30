@@ -128,10 +128,30 @@ func ReplaceVariables(
 			dataValStr = dataVal
 		case []byte:
 			dataValStr = string(dataVal)
-		case int, uint, int8, int16, int32, int64:
-			dataValStr = strconv.Itoa(dataVal.(int))
-		case float32, float64:
-			dataValStr = strconv.FormatFloat(dataVal.(float64), 'f', -1, 64)
+		case int64:
+			dataValStr = strconv.FormatInt(dataVal, 10)
+		case int:
+			dataValStr = strconv.FormatInt(int64(dataVal), 10)
+		case int8:
+			dataValStr = strconv.FormatInt(int64(dataVal), 10)
+		case int16:
+			dataValStr = strconv.FormatInt(int64(dataVal), 10)
+		case int32:
+			dataValStr = strconv.FormatInt(int64(dataVal), 10)
+		case uint64:
+			dataValStr = strconv.FormatUint(dataVal, 10)
+		case uint:
+			dataValStr = strconv.FormatUint(uint64(dataVal), 10)
+		case uint8:
+			dataValStr = strconv.FormatUint(uint64(dataVal), 10)
+		case uint16:
+			dataValStr = strconv.FormatUint(uint64(dataVal), 10)
+		case uint32:
+			dataValStr = strconv.FormatUint(uint64(dataVal), 10)
+		case float32:
+			dataValStr = strconv.FormatFloat(float64(dataVal), 'f', -1, 64)
+		case float64:
+			dataValStr = strconv.FormatFloat(dataVal, 'f', -1, 64)
 		default:
 			continue
 		}
