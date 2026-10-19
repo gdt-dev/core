@@ -36,6 +36,8 @@ var (
 	// ErrUnexpectedError is an ErrFailure when an unexpected error has
 	// occurred.
 	ErrUnexpectedError = fmt.Errorf("%w: unexpected error", ErrFailure)
+	// ErrExpectedError is an ErrFailure when an expected error did not occur.
+	ErrExpectedError = fmt.Errorf("%w: unexpected error", ErrFailure)
 )
 
 // TimeoutExceeded returns an ErrTimeoutExceeded when a test's execution
@@ -96,6 +98,23 @@ func NoneIn(elements, container interface{}) error {
 // expected.
 func UnexpectedError(err error) error {
 	return fmt.Errorf("%w: %s", ErrUnexpectedError, err)
+}
+
+// ExpectedError returns an ErrExpectedError when the supplied error did not
+// occur or the supplied ExpectContains did not match.
+func ExpectedError(subject any) error {
+	switch subject := subject.(type) {
+	case error:
+		return fmt.Errorf("%w: %s", ErrExpectedError, subject)
+	case ExpectContains:
+		expectMatch := subject.String()
+		return fmt.Errorf("%w: %s", ErrExpectedError, expectMatch)
+	default:
+		msg := fmt.Sprintf(
+			"unhandled subject type %T supplied to ExpectedError", subject,
+		)
+		panic(msg)
+	}
 }
 
 var (

@@ -9,8 +9,7 @@ tests:
         is: 1234
   # This test should be executed because we do not use the require: true.
   - exec: echo 42
-    assert:
-      require: true
+    require:
       out:
         is: 24
   # This test should not be executed because of the use of require: true above
