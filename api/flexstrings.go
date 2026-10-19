@@ -5,6 +5,8 @@
 package api
 
 import (
+	"strings"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/gdt-dev/core/parse"
@@ -19,6 +21,23 @@ type FlexStrings struct {
 // Values returns the contained collection of string values.
 func (f *FlexStrings) Values() []string {
 	return f.values
+}
+
+// NewFlexStrings returns a new FlexStrings from zero or more string args.
+func NewFlexStrings(args ...string) *FlexStrings {
+	return &FlexStrings{values: args}
+}
+
+// String returns a string representation of the FlexStrings
+func (f FlexStrings) String() string {
+	switch len(f.values) {
+	case 0:
+		return ""
+	case 1:
+		return f.values[0]
+	default:
+		return "[" + strings.Join(f.values, ",") + "]"
+	}
 }
 
 // UnmarshalYAML is a custom unmarshaler that understands that the value of the

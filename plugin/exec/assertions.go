@@ -20,33 +20,20 @@ import (
 type Expect struct {
 	// Require indicates that any failed assertion should stop the execution of
 	// the test scenario in which the test spec is contained.
-	Require bool `yaml:"require,omitempty"`
+	Require bool `yaml:"-"`
 	// ExitCode is the expected exit code for the executed command. The default
 	// (0) is the universal successful exit code, so you only need to set this
 	// if you expect a non-successful result from executing the command.
 	ExitCode int `yaml:"exit-code,omitempty"`
 	// Out has things that are expected in the stdout response
-	Out *PipeExpect `yaml:"out,omitempty"`
+	Out *api.ExpectContains `yaml:"out,omitempty"`
 	// Err has things that are expected in the stderr response
-	Err *PipeExpect `yaml:"err,omitempty"`
-}
-
-// PipeExpect contains assertions about the contents of a pipe
-type PipeExpect struct {
-	// ContainsAll is one or more strings that *all* must be present in the
-	// contents of the pipe
-	ContainsAll *api.FlexStrings `yaml:"contains,omitempty"`
-	// ContainsNone is one or more strings, *none of which* should be present in
-	// the contents of the pipe
-	ContainsNone *api.FlexStrings `yaml:"contains-none-of,omitempty"`
-	// ContainsOneOf is one or more strings of which *at least one* must be
-	// present in the contents of the pipe
-	ContainsAny *api.FlexStrings `yaml:"contains-one-of,omitempty"`
+	Err *api.ExpectContains `yaml:"err,omitempty"`
 }
 
 // pipeAssertions contains assertions about the contents of a pipe
 type pipeAssertions struct {
-	PipeExpect
+	api.ExpectContains
 	// pipe is the contents of the pipe that we will evaluate.
 	pipe *bytes.Buffer
 	// name is the string name of the pipe.
@@ -214,16 +201,16 @@ func newAssertions(
 	if e != nil {
 		if e.Out != nil {
 			a.expOutPipe = &pipeAssertions{
-				PipeExpect: *e.Out,
-				name:       "stdout",
-				pipe:       outPipe,
+				ExpectContains: *e.Out,
+				name:           "stdout",
+				pipe:           outPipe,
 			}
 		}
 		if e.Err != nil {
 			a.expErrPipe = &pipeAssertions{
-				PipeExpect: *e.Err,
-				name:       "stderr",
-				pipe:       errPipe,
+				ExpectContains: *e.Err,
+				name:           "stderr",
+				pipe:           errPipe,
 			}
 		}
 	}
